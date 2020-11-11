@@ -1,0 +1,12 @@
+# cache
+**.ipynb_checkpoints**
+**pycache**
+
+# sensitive
+**credential**
+**output**
+**data**
+**model**
+
+# test
+.coverage
