@@ -26,7 +26,7 @@ def hit(party, state):
         return {**state, party: updated}
 
 
-def step(state, player_stick, dealer_stick):
+def step(state, player_stick, dealer_stick=None):
 
     if not player_stick:
         return hit("player", state)
@@ -37,7 +37,7 @@ def step(state, player_stick, dealer_stick):
     return {**state, "reward": compare(state)}
 
 
-def init_state():
+def init():
     return {
         "dealer": sample(initial=True),
         "player": sample(initial=True),
@@ -59,7 +59,7 @@ def game(
     dealer_stick_policy=dummy_dealer_stick_policy,
     log=False,
 ):
-    state = init_state()
+    state = init()
 
     while state["reward"] is None:
         if log:
@@ -69,8 +69,7 @@ def game(
         if player_stick:
             break
 
-        dealer_stick = False
-        state = step(state, player_stick, dealer_stick)
+        state = step(state, player_stick)
 
     while state["reward"] is None:
         if log:

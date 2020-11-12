@@ -7,6 +7,8 @@ authors = ["Zhenyu Lin <zhenyu.lyn@gmail.com>"]
 [tool.poetry.dependencies]
 python = "^3.6.10"
 pytest-timeout = "^1.4.2"
+tqdm = "^4.51.0"
+matplotlib = "^3.3.2"
 
 [tool.poetry.dev-dependencies]
 ipykernel = "^5.3.0"
