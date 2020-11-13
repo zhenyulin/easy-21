@@ -1,17 +1,14 @@
 # %%
-import numpy as np
-import matplotlib.pyplot as plt
-
 from math import floor
 from random import random
-from tqdm import tqdm
+from tqdm import trange
 
 from game import init, step, dummy_dealer_stick_policy
+from plot import plot_2d_value_map, plot_line
 from value_map import ValueMap
 
-BATCH = 10
 EPISODES = int(1e6)
-episodes_count = 0
+BATCH = 10
 
 ACTIONS = ["stick", "hit"]
 
@@ -100,29 +97,29 @@ def learn_episode(sequence, reward):
         action_values.learn(action_key, reward)
 
 
-def playout_and_learn():
-    for _ in range(EPISODES):
-        sequence = []
+def playout():
+    sequence = []
 
-        state = init()
+    state = init()
 
-        while state["reward"] is None:
-            player_action_index = player_policy(state)
-            sequence.append([state, player_action_index])
+    while state["reward"] is None:
+        player_action_index = player_policy(state)
+        sequence.append([state, player_action_index])
 
-            player_stick = player_action_index == ACTIONS.index("stick")
-            if player_stick:
-                break
+        player_stick = player_action_index == ACTIONS.index("stick")
+        if player_stick:
+            break
 
-            state = step(state, player_stick)
+        state = step(state, player_stick)
 
-        while state["reward"] is None:
-            player_stick = True
-            dealer_stick = dummy_dealer_stick_policy(state)
-            state = step(state, player_stick, dealer_stick)
+    while state["reward"] is None:
+        player_stick = True
+        dealer_stick = dummy_dealer_stick_policy(state)
+        state = step(state, player_stick, dealer_stick)
 
-        reward = state["reward"]
-        learn_episode(sequence, reward)
+    reward = state["reward"]
+
+    return sequence, reward
 
 
 def set_optimal():
@@ -139,77 +136,53 @@ def set_optimal():
         optimal_policy_values.set(state_key, best_action_index)
 
 
-def plot_2d_value_map(value_map_name):
-    fig = plt.figure(figsize=(12, 12))
-    ax = fig.add_subplot(111, projection="3d")
+def performance_metrics(metrics_history):
+    optimal_state_values_mean = optimal_state_values.mean()
 
-    dealer = np.arange(1, 11, 1)
-    player = np.arange(1, 22, 1)
-    X, Y = np.meshgrid(dealer, player)
+    metrics_history["optimal_state_values_mean"].append(optimal_state_values_mean)
 
-    Z = np.array([[eval(value_map_name).get((x, y)) for x in dealer] for y in player])
-
-    plt.xticks(dealer)
-    plt.yticks(player)
-    ax.set_xlabel("Dealer")
-    ax.set_ylabel("Player")
-    ax.set_zlabel("Value")
-    plt.title(f"{value_map_name}, episode count: {episodes_count:.0e}")
-
-    ax.plot_surface(X, Y, Z)
+    print(f"optimal state values mean: {optimal_state_values_mean:.3f}")
 
 
-def plot_line(data):
-    plt.figure(figsize=(12, 12))
-    ax = plt.axes()
-    x = np.arange(1, len(data) + 1, 1)
-    ax.plot(x, data)
+def convergence_metrics():
+    optimal_state_values_diff = optimal_state_values.diff()
+
+    print(f"optimal state values diff: {optimal_state_values_diff:.3f}")
+
+    if optimal_state_values_diff < 0.005:
+        print("optimal state values have converged")
+        return True
+    else:
+        return False
 
 
-def train(episodes_count):
+def train():
 
-    optimal_state_values_mean_history = []
+    metrics_history = {"optimal_state_values_mean": []}
 
-    for _ in tqdm(range(BATCH)):
+    episodes_count = 0
 
-        action_values.backup()
-        optimal_state_values.backup()
+    for _ in trange(BATCH, leave=True):
 
-        playout_and_learn()
+        for _ in range(EPISODES):
+            sequence, reward = playout()
+            learn_episode(sequence, reward)
+
         episodes_count += EPISODES
-
         set_optimal()
 
-        optimal_state_values_mean = optimal_state_values.mean()
-        print(f"optimal state values mean: {optimal_state_values_mean:.2f}")
-
-        optimal_state_values_mean_history.append(optimal_state_values_mean)
-
-        optimal_state_values_diff_change_rate = optimal_state_values.diff_change_rate()
-        print(
-            f"optimal state values diff change rate: {optimal_state_values_diff_change_rate:.2f}"
-        )
-
-        if abs(optimal_state_values_diff_change_rate) < 0.01:
-            print("state values have converged")
+        performance_metrics(metrics_history)
+        if convergence_metrics():
             break
 
-        action_values_mean = action_values.mean()
-        print(f"action values mean: {action_values_mean:.2f}")
+        optimal_state_values.backup()
 
-        action_values_diff_change_rate = action_values.diff_change_rate()
-        print(f"action values diff change rate: {action_values_diff_change_rate:.2f}")
-
-        if abs(action_values_diff_change_rate) < 0.01:
-            print("state values have converged")
-            break
-
-    plot_2d_value_map("optimal_state_values")
-    plot_2d_value_map("optimal_policy_values")
-    plot_line(optimal_state_values_mean_history)
+    plot_2d_value_map(optimal_state_values, "optimal_state_values", episodes_count)
+    plot_2d_value_map(optimal_policy_values, "optimal_policy_values", episodes_count)
+    plot_line(metrics_history["optimal_state_values_mean"])
 
 
 try:
-    train(episodes_count)
+    train()
 except Exception as e:
     print(e)

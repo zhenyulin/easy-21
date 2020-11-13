@@ -5,6 +5,7 @@ from math import sqrt
 class ValueMap:
     def __init__(self):
         self.data = {}
+        self.cache = {}
         self.last_diff = None
 
     def init_if_not_found(self, key):
@@ -45,31 +46,12 @@ class ValueMap:
         d["count"] += 1
         d["value"] += (sample - d["value"]) / d["count"]
 
-    def diff(self, method="mae"):
+    def diff(self):
         if len(self.data.keys()) != len(self.cache.keys()):
-            return 0
-
-        if method == "mae":
-            absolute_error = 0
-            for key in self.data.keys():
-                absolute_error += abs(
-                    self.data[key]["value"] - self.cache[key]["value"]
-                )
-
-            return absolute_error / len(self.data.keys())
-
-        if method == "rmse":
-            sq_error = 0
-            for key in self.data.keys():
-                sq_error += (self.data[key]["value"] - self.cache[key]["value"]) ** 2
-
-            return sqrt(sq_error / len(self.data.keys()))
-
-    def diff_change_rate(self, method="mae"):
-        diff = self.diff(method)
-
-        if self.last_diff is not None and self.last_diff > 0:
-            return (self.last_diff - diff) / self.last_diff
-        else:
-            self.last_diff = diff
             return 1
+
+        sq_error = 0
+        for key in self.data.keys():
+            sq_error += (self.data[key]["value"] - self.cache[key]["value"]) ** 2
+
+        return sqrt(sq_error / len(self.data.keys()))
