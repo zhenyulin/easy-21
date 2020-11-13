@@ -153,7 +153,7 @@ def check_convergence(metrics_history, value_map_name, metrics_name):
 
     last_3_mean = sum(last_3) / len(last_3)
 
-    if last_3_mean < 0.005:
+    if last_3_mean < 0.001:
         print(f"{value_map_name}_{metrics_name} have converged")
         return True
     else:
@@ -192,7 +192,7 @@ def train():
 
     plot_2d_value_map(optimal_state_values, "optimal_state_values", episodes_count)
     plot_2d_value_map(optimal_policy_values, "optimal_policy_values", episodes_count)
-    plot_line(metrics_history["optimal_state_values_mean"])
+    plot_line(metrics_history["optimal_state_values"]["mean"])
 
 
 try:
