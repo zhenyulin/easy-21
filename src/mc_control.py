@@ -18,7 +18,7 @@ state values are learnt from all the trajectory samples
 from the given state
 followed by all possible actions given by the policy
 """
-state_values = ValueMap()
+state_values = ValueMap("state_values")
 
 """Action Value Q: state, action -> expected return
 
@@ -30,14 +30,14 @@ the overall win ratio of the policy at all states
 when the number of the training episodes is large enough
 to weight in more later policies
 """
-action_values = ValueMap()
+action_values = ValueMap("action_values")
 
 """Optimal State Values V*: state -> best action value
 """
-optimal_state_values = ValueMap()
+optimal_state_values = ValueMap("optimal_state_values")
 """Optimal Policy Pi*: state -> best value action index
 """
-optimal_policy_values = ValueMap()
+optimal_policy_values = ValueMap("optimal_policy_values")
 
 
 def get_best_action(state_key):
@@ -132,7 +132,7 @@ def playout():
     return sequence, reward
 
 
-def set_optimal():
+def set_optimal_policy_and_state_values():
 
     ALL_STATE_KEYS = [
         (dealer, player) for player in range(1, 22) for dealer in range(1, 11)
@@ -146,44 +146,7 @@ def set_optimal():
         optimal_policy_values.set(state_key, best_action_index)
 
 
-def record_metrics(metrics_history, metrics_instance):
-    for value_map_name in metrics_history.keys():
-        value_map = metrics_instance[value_map_name]
-        for method in metrics_history[value_map_name].keys():
-            metrics = getattr(value_map, method)()
-            metrics_history[value_map_name][method].append(metrics)
-            print(f"{value_map_name}_{method}: {metrics:.3f}")
-
-            if method == "diff":
-                value_map.backup()
-
-
-def check_convergence(metrics_history, value_map_name, metrics_name, threshold):
-    last_3 = metrics_history[value_map_name][metrics_name][-4:-1]
-
-    if len(last_3) < 3:
-        return False
-
-    last_3_mean = sum(last_3) / len(last_3)
-
-    if last_3_mean < threshold:
-        print(f"{value_map_name}_{metrics_name} have converged")
-        return True
-    else:
-        return False
-
-
 def train():
-
-    metrics_history = {
-        "optimal_policy_values": {
-            "diff": [],
-        },
-    }
-
-    metrics_instance = {
-        "optimal_policy_values": optimal_policy_values,
-    }
 
     episodes_count = 0
 
@@ -194,16 +157,16 @@ def train():
             learn_episode(sequence, reward)
 
         episodes_count += EPISODES
-        set_optimal()
 
-        record_metrics(metrics_history, metrics_instance)
+        set_optimal_policy_and_state_values()
 
-        if check_convergence(metrics_history, "optimal_policy_values", "diff", 0.001):
+        optimal_policy_values.record(["diff"])
+        if optimal_policy_values.converged("diff", 0.001):
             break
 
     plot_2d_value_map(optimal_state_values, "optimal_state_values", episodes_count)
     plot_2d_value_map(optimal_policy_values, "optimal_policy_values", episodes_count)
-    plot_line(metrics_history["optimal_policy_values"]["diff"])
+    plot_line(optimal_policy_values.metrics_history["diff"])
 
 
 try:

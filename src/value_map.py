@@ -5,40 +5,44 @@ from math import sqrt
 
 
 class ValueMap:
-    def __init__(self):
+    def __init__(self, name):
+        self.name = name
         self.data = {}
         self.cache = {}
-        self.last_diff = None
+        self.metrics_history = {
+            "diff": [],
+            "mean": [],
+        }
 
+    #
+    # utility functions
+    #
     def init_if_not_found(self, key):
         if key not in self.data.keys():
             self.data[key] = {"count": 0, "value": 0}
 
+    #
+    # getter functions
+    #
     def keys(self):
         return self.data.keys()
 
     def get(self, key):
         self.init_if_not_found(key)
-
         return self.data[key]["value"]
 
     def count(self, key):
         self.init_if_not_found(key)
-
         return self.data[key]["count"]
 
+    #
+    # setter functions
+    #
     def set(self, key, value):
         self.init_if_not_found(key)
 
         self.data[key]["count"] = 0
         self.data[key]["value"] = value
-
-    def backup(self):
-        self.cache = deepcopy(self.data)
-
-    def mean(self):
-        values = [self.data[key]["value"] for key in self.data.keys()]
-        return sum(values) / len(values)
 
     def learn(self, key, sample):
         self.init_if_not_found(key)
@@ -47,6 +51,16 @@ class ValueMap:
 
         d["count"] += 1
         d["value"] += (sample - d["value"]) / d["count"]
+
+    def backup(self):
+        self.cache = deepcopy(self.data)
+
+    #
+    # metrics functions
+    #
+    def mean(self):
+        values = [self.data[key]["value"] for key in self.data.keys()]
+        return sum(values) / len(values)
 
     def diff(self):
         if len(self.data.keys()) != len(self.cache.keys()):
@@ -59,6 +73,42 @@ class ValueMap:
 
         return sqrt(sq_error / len(self.data.keys()))
 
+    #
+    # metrics history function
+    #
+    def record(self, metrics_names, log=True):
+        for metrics_name in metrics_names:
+            metrics_method = getattr(self, metrics_name)
+            metrics = metrics_method()
+            self.metrics_history[metrics_name].append(metrics)
+            if log:
+                print(f"{self.name}_{metrics_name}: {metrics:.3f}")
+
+            if metrics_name == "diff":
+                self.backup()
+
+    def converged(self, metrics_name, threshold, log=True):
+        last_3 = self.metrics_history[metrics_name][-4:-1]
+
+        if len(last_3) < 3:
+            return False
+
+        last_3_mean = sum(last_3) / len(last_3)
+
+        if last_3_mean < threshold:
+            if log:
+                print(f"{self.name}_{metrics_name} has converged")
+            return True
+        else:
+            return False
+
+    #
+    # plot functions
+    #
+
+    #
+    # file I/O functions
+    #
     def save(self, path):
         with open(path, "w") as fp:
             string_key_data = {str(key): self.data[key] for key in self.data.keys()}
