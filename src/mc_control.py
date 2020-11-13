@@ -7,8 +7,8 @@ from game import init, step, dummy_dealer_stick_policy
 from plot import plot_2d_value_map, plot_line
 from value_map import ValueMap
 
-EPISODES = int(1e6)
-BATCH = 10
+EPISODES = int(1e5)
+BATCH = 100
 
 ACTIONS = ["stick", "hit"]
 
@@ -136,21 +136,25 @@ def set_optimal():
         optimal_policy_values.set(state_key, best_action_index)
 
 
-def performance_metrics(metrics_history):
-    optimal_state_values_mean = optimal_state_values.mean()
+def record_metrics(metrics_history, metrics_instance):
+    for value_map_name in metrics_history.keys():
+        value_map = metrics_instance[value_map_name]
+        for method in metrics_history[value_map_name].keys():
+            metrics = getattr(value_map, method)()
+            metrics_history[value_map_name][method].append(metrics)
+            print(f"{value_map_name}_{method}: {metrics:.3f}")
 
-    metrics_history["optimal_state_values_mean"].append(optimal_state_values_mean)
 
-    print(f"optimal state values mean: {optimal_state_values_mean:.3f}")
+def check_convergence(metrics_history, value_map_name, metrics_name):
+    last_3 = metrics_history[value_map_name][metrics_name][-4:-1]
 
+    if len(last_3) < 3:
+        return False
 
-def convergence_metrics():
-    optimal_state_values_diff = optimal_state_values.diff()
+    last_3_mean = sum(last_3) / len(last_3)
 
-    print(f"optimal state values diff: {optimal_state_values_diff:.3f}")
-
-    if optimal_state_values_diff < 0.005:
-        print("optimal state values have converged")
+    if last_3_mean < 0.005:
+        print(f"{value_map_name}_{metrics_name} have converged")
         return True
     else:
         return False
@@ -158,7 +162,16 @@ def convergence_metrics():
 
 def train():
 
-    metrics_history = {"optimal_state_values_mean": []}
+    metrics_history = {
+        "optimal_state_values": {
+            "mean": [],
+            "diff": [],
+        }
+    }
+
+    metrics_instance = {
+        "optimal_state_values": optimal_state_values,
+    }
 
     episodes_count = 0
 
@@ -171,8 +184,8 @@ def train():
         episodes_count += EPISODES
         set_optimal()
 
-        performance_metrics(metrics_history)
-        if convergence_metrics():
+        record_metrics(metrics_history, metrics_instance)
+        if check_convergence(metrics_history, "optimal_state_values", "diff"):
             break
 
         optimal_state_values.backup()

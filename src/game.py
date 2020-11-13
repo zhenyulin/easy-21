@@ -21,7 +21,11 @@ def compare(state):
 def hit(party, state):
     updated = state[party] + sample()
     if updated > 21 or updated < 1:
-        return {**state, party: updated, "reward": 1 if party == "dealer" else -1}
+        return {
+            **state,
+            party: updated,
+            "reward": 1 if party == "dealer" else -1,
+        }
     else:
         return {**state, party: updated}
 
