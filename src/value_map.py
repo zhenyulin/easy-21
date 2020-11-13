@@ -1,3 +1,5 @@
+import json
+
 from copy import deepcopy
 from math import sqrt
 
@@ -52,6 +54,21 @@ class ValueMap:
 
         sq_error = 0
         for key in self.data.keys():
-            sq_error += (self.data[key]["value"] - self.cache[key]["value"]) ** 2
+            error = self.data[key]["value"] - self.cache[key]["value"]
+            sq_error += error ** 2
 
         return sqrt(sq_error / len(self.data.keys()))
+
+    def save(self, path):
+        with open(path, "w") as fp:
+            string_key_data = {str(key): self.data[key] for key in self.data.keys()}
+            json.dump(string_key_data, fp, sort_keys=True, indent=4)
+
+    def load(self, path):
+        with open(path, "r") as fp:
+            string_key_data = json.load(fp)
+            tuple_key_data = {
+                tuple([int(s) for s in key[1:-1].split(",")]): string_key_data[key]
+                for key in string_key_data.keys()
+            }
+            self.data = tuple_key_data

@@ -77,7 +77,17 @@ def player_policy(state):
     # we use a constant factor N here
     # as believed that when sample size of a state
     # is significant its value is close to the true value
-    N = 100
+    #
+    # in order to let the sample szie be significant enough
+    # it needs to satisfy that all possible subsequent trajectories
+    # from a state have been sampled enough
+    #
+    # here mean state_count = episodes_count / possible_states_count
+    # possible_states_count = 10*21
+    # state_count ~ EPISODES*BATCH/420
+    # exploration = K / K + BATCH(n) ~ [1, K/K+BATCH]
+    K = 0.5 * BATCH
+    N = EPISODES / 420 * K
     state_count = state_values.count(state_key)
     exploration_rate = N / (N + state_count)
 
@@ -144,8 +154,11 @@ def record_metrics(metrics_history, metrics_instance):
             metrics_history[value_map_name][method].append(metrics)
             print(f"{value_map_name}_{method}: {metrics:.3f}")
 
+            if method == "diff":
+                value_map.backup()
 
-def check_convergence(metrics_history, value_map_name, metrics_name):
+
+def check_convergence(metrics_history, value_map_name, metrics_name, threshold):
     last_3 = metrics_history[value_map_name][metrics_name][-4:-1]
 
     if len(last_3) < 3:
@@ -153,7 +166,7 @@ def check_convergence(metrics_history, value_map_name, metrics_name):
 
     last_3_mean = sum(last_3) / len(last_3)
 
-    if last_3_mean < 0.001:
+    if last_3_mean < threshold:
         print(f"{value_map_name}_{metrics_name} have converged")
         return True
     else:
@@ -163,14 +176,13 @@ def check_convergence(metrics_history, value_map_name, metrics_name):
 def train():
 
     metrics_history = {
-        "optimal_state_values": {
-            "mean": [],
+        "optimal_policy_values": {
             "diff": [],
-        }
+        },
     }
 
     metrics_instance = {
-        "optimal_state_values": optimal_state_values,
+        "optimal_policy_values": optimal_policy_values,
     }
 
     episodes_count = 0
@@ -185,17 +197,17 @@ def train():
         set_optimal()
 
         record_metrics(metrics_history, metrics_instance)
-        if check_convergence(metrics_history, "optimal_state_values", "diff"):
-            break
 
-        optimal_state_values.backup()
+        if check_convergence(metrics_history, "optimal_policy_values", "diff", 0.001):
+            break
 
     plot_2d_value_map(optimal_state_values, "optimal_state_values", episodes_count)
     plot_2d_value_map(optimal_policy_values, "optimal_policy_values", episodes_count)
-    plot_line(metrics_history["optimal_state_values"]["mean"])
+    plot_line(metrics_history["optimal_policy_values"]["diff"])
 
 
 try:
     train()
+    action_values.save("optimal_action_values.json")
 except Exception as e:
     print(e)
