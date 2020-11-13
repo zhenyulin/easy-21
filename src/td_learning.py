@@ -1,14 +1,15 @@
 # %%
+import numpy as np
+
 from math import floor
 from random import random
-from tqdm import trange
+from tqdm import tqdm, trange
 
 from game import init, step, dummy_dealer_stick_policy
 from plot import plot_2d_value_map, plot_line
 from value_map import ValueMap
 
-EPISODES = int(1e5)
-BATCH = 100
+EPISODES = int(1e3)
 
 ACTIONS = ["stick", "hit"]
 
@@ -31,13 +32,6 @@ when the number of the training episodes is large enough
 to weight in more later policies
 """
 action_values = ValueMap("action_values")
-
-"""Optimal State Values V*: state -> best action value
-"""
-optimal_state_values = ValueMap("optimal_state_values")
-"""Optimal Policy Pi*: state -> best value action index
-"""
-optimal_policy_values = ValueMap("optimal_policy_values")
 
 
 def get_best_action(state_key):
@@ -86,8 +80,7 @@ def player_policy(state):
     # possible_states_count = 10*21
     # state_count ~ EPISODES*BATCH/420
     # exploration = K / K + BATCH(n) ~ [1, K/K+BATCH]
-    K = 0.5 * BATCH
-    N = EPISODES / 420 * K
+    N = EPISODES / 420 / 10
     state_count = state_values.count(state_key)
     exploration_rate = N / (N + state_count)
 
@@ -97,17 +90,68 @@ def player_policy(state):
         return best_action_index
 
 
-def learn_episode(sequence, reward):
-    for [state, action_index] in sequence:
+def get_action_key_of_sequence_stop(sequence_stop):
+    state, action_index = sequence_stop
+    action_key = (
+        state["dealer"],
+        state["player"],
+        action_index,
+    )
+    return action_key
 
-        state_key = (state["dealer"], state["player"])
-        state_values.learn(state_key, reward)
 
-        action_key = (*state_key, action_index)
-        action_values.learn(action_key, reward)
+def sarsa_lambda_learn(sequence, reward=0, discount=1, lambda_value=1):
+    S = len(sequence)
+
+    for s in range(S):
+        # next steps available to look ahead
+        N = S - (s + 1)
+
+        lambda_return = 0
+
+        if N > 1 and lambda_value > 0:
+            # to lookahead [1, N] steps
+            # here all intermediate reward is 0
+            for n in range(1, N + 1):
+                # n_step_td_return, a.k.a. n_step_td_target, n_step_q_return
+                n_step_td_return = 0
+
+                # intermediate 0 reward is ommited
+                # when sequence has been a full episode
+
+                # for m in range(n-1):
+                #     n_step_td_return += (discount ** m) * 0
+
+                # here the reward is the final reward of the episode
+                # if reward is provided in the input and not 0
+                if n == N and reward != 0:
+                    n_step_td_return = (discount ** (N - 1)) * reward
+
+                # adding the discounted TD return
+                n_step_ahead_action_key = get_action_key_of_sequence_stop(
+                    sequence[s + n]
+                )
+                n_step_td_return += (discount ** n) * action_values.get(
+                    n_step_ahead_action_key
+                )
+                lambda_return += (lambda_value ** (n - 1)) * n_step_td_return
+
+            # not entirely necessary?
+            # if lambda_value = 1, it is using equal weights
+            lambda_return = (
+                lambda_return / (1 - lambda_value)
+                if lambda_value < 1
+                else lambda_return / N
+            )
+        else:
+            lambda_return += reward
+
+        sequence_stop_s_action_key = get_action_key_of_sequence_stop(sequence[s])
+
+        action_values.learn(sequence_stop_s_action_key, lambda_return)
 
 
-def playout():
+def playout_and_learn(lambda_value=1):
     sequence = []
 
     state = init()
@@ -115,6 +159,8 @@ def playout():
     while state["reward"] is None:
         player_action_index = player_policy(state)
         sequence.append([state, player_action_index])
+
+        sarsa_lambda_learn(sequence, lambda_value=lambda_value)
 
         player_stick = player_action_index == ACTIONS.index("stick")
         if player_stick:
@@ -129,7 +175,46 @@ def playout():
 
     reward = state["reward"]
 
-    return sequence, reward
+    sarsa_lambda_learn(sequence, reward, lambda_value=lambda_value)
+
+
+def train():
+    lambda_value_performance = []
+
+    for lambda_value in tqdm(np.arange(0, 1.1, 0.1)):
+        action_values.reset()
+        state_values.reset()
+
+        for _ in range(EPISODES):
+            playout_and_learn(lambda_value=lambda_value)
+
+        action_values.backup()
+        action_values.load("optimal_action_values.json")
+        diff_to_optimal = action_values.diff()
+        print(diff_to_optimal)
+        lambda_value_performance.append(diff_to_optimal)
+
+    plot_line(lambda_value_performance)
+
+
+try:
+    train()
+except Exception as e:
+    print(e)
+
+# %%
+
+EPISODES = int(1e5)
+BATCH = 100
+
+state_values.reset()
+action_values.reset()
+"""Optimal State Values V*: state -> best action value
+"""
+optimal_state_values = ValueMap("optimal_state_values")
+"""Optimal Policy Pi*: state -> best value action index
+"""
+optimal_policy_values = ValueMap("optimal_policy_values")
 
 
 def set_optimal_policy_and_state_values():
@@ -151,22 +236,22 @@ def train():
     for _ in trange(BATCH, leave=True):
 
         for _ in range(EPISODES):
-            sequence, reward = playout()
-            learn_episode(sequence, reward)
+            playout_and_learn(lambda_value=0.5)
 
         set_optimal_policy_and_state_values()
 
         optimal_policy_values.record(["diff"])
+        optimal_state_values.record(["mean"])
         if optimal_policy_values.converged("diff", 0.001):
             break
 
     plot_2d_value_map(optimal_state_values)
     plot_2d_value_map(optimal_policy_values)
     plot_line(optimal_policy_values.metrics_history["diff"])
+    plot_line(optimal_policy_values.metrics_history["mean"])
 
 
 try:
     train()
-    action_values.save("optimal_action_values.json")
 except Exception as e:
     print(e)

@@ -58,6 +58,10 @@ class ValueMap:
     def backup(self):
         self.cache = deepcopy(self.data)
 
+    def reset(self):
+        self.data = {}
+        self.cache = {}
+
     #
     # metrics functions
     #
@@ -66,12 +70,10 @@ class ValueMap:
         return sum(values) / len(values)
 
     def diff(self):
-        if len(self.data.keys()) != len(self.cache.keys()):
-            return 1
-
         sq_error = 0
         for key in self.data.keys():
-            error = self.data[key]["value"] - self.cache[key]["value"]
+            old_value = self.cache[key]["value"] if key in self.cache.keys() else 0
+            error = self.data[key]["value"] - old_value
             sq_error += error ** 2
 
         return sqrt(sq_error / len(self.data.keys()))
