@@ -1,64 +1,19 @@
 # %%
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 
-from copy import deepcopy
 from math import floor
 from random import random
 from tqdm import tqdm
 
 from game import init, step, dummy_dealer_stick_policy
+from value_map import ValueMap
 
+BATCH = 10
 EPISODES = int(1e6)
 episodes_count = 0
 
 ACTIONS = ["stick", "hit"]
-
-
-class ValueMap:
-    def __init__(self):
-        self.data = {}
-        self.last_diff = None
-
-    def init_if_not_found(self, key):
-        if key not in self.data.keys():
-            self.data[key] = {"count": 0, "mean": 0}
-
-    def get(self, key, field):
-        self.init_if_not_found(key)
-
-        return self.data[key][field]
-
-    def update(self, key, sample):
-        self.init_if_not_found(key)
-
-        d = self.data[key]
-
-        d["count"] += 1
-        d["mean"] += (sample - d["mean"]) / d["count"]
-
-    def backup(self):
-        self.cache = deepcopy(self.data)
-
-    def diff(self):
-        if len(self.data.keys()) != len(self.cache.keys()):
-            return None
-
-        abs_diff = 0
-        for key in self.data.keys():
-            abs_diff += abs(self.data[key]["mean"] - self.cache[key]["mean"])
-
-        return abs_diff
-
-    def diff_change(self):
-        diff = self.diff()
-
-        if self.last_diff is not None and self.last_diff > 0:
-            return abs(diff - self.last_diff) / self.last_diff
-        else:
-            self.last_diff = diff
-            return 1
-
 
 """State Value V: state -> expected return
 
@@ -72,13 +27,34 @@ state_values = ValueMap()
 
 action values are learnt from all the trajectory samples
 from the action on the given state
+
+the mean expectation (average mean) also tells us
+the overall win ratio of the policy at all states
+when the number of the training episodes is large enough
+to weight in more later policies
 """
 action_values = ValueMap()
-policy_values = ValueMap()
+
+"""Optimal State Values V*: state -> best action value
+"""
+optimal_state_values = ValueMap()
+"""Optimal Policy Pi*: state -> best value action index
+"""
+optimal_policy_values = ValueMap()
+
+
+def get_best_action(state_key):
+    possible_action_values = [
+        action_values.get((*state_key, action_index))
+        for action_index in range(len(ACTIONS))
+    ]
+    best_action_value = max(possible_action_values)
+    best_action_index = possible_action_values.index(best_action_value)
+    return best_action_index, best_action_value
 
 
 def player_policy(state):
-    """Policy Function: state -> action
+    """Policy Function: state -> action_index
 
     epsilon-greedy policy is used here
     to allow a chance (epsilon) to explore random actions
@@ -98,53 +74,43 @@ def player_policy(state):
     """
     state_key = (state["dealer"], state["player"])
 
-    possible_action_values = [
-        action_values.get((*state_key, action), "mean") for action in ACTIONS
-    ]
-    best_action_index = possible_action_values.index(max(possible_action_values))
-    best_action = ACTIONS[best_action_index]
+    best_action_index, _ = get_best_action(state_key)
 
     # exploration gradually decreases with more samples
     # we use a constant factor N here
     # as believed that when sample size of a state
     # is significant its value is close to the true value
     N = 100
-    state_count = state_values.get(state_key, "count")
+    state_count = state_values.count(state_key)
     exploration_rate = N / (N + state_count)
 
     if random() < exploration_rate:
-        return ACTIONS[floor(random() * len(ACTIONS))]
+        return floor(random() * len(ACTIONS))
     else:
-        return best_action
+        return best_action_index
 
 
 def learn_episode(sequence, reward):
-    for [state, action] in sequence:
+    for [state, action_index] in sequence:
+
         state_key = (state["dealer"], state["player"])
+        state_values.learn(state_key, reward)
 
-        state_values.update(state_key, reward)
-
-        action_key = (*state_key, action)
-        action_values.update(action_key, reward)
-
-        policy_sample_value = 1 if action == "stick" else -1
-        policy_values.update(state_key, policy_sample_value)
+        action_key = (*state_key, action_index)
+        action_values.learn(action_key, reward)
 
 
-def learning():
-    N = EPISODES
-
-    for _ in range(N):
+def playout_and_learn():
+    for _ in range(EPISODES):
         sequence = []
 
         state = init()
 
         while state["reward"] is None:
-            player_action = player_policy(state)
+            player_action_index = player_policy(state)
+            sequence.append([state, player_action_index])
 
-            sequence.append([state, player_action])
-
-            player_stick = player_action == "stick"
+            player_stick = player_action_index == ACTIONS.index("stick")
             if player_stick:
                 break
 
@@ -159,7 +125,21 @@ def learning():
         learn_episode(sequence, reward)
 
 
-def plot_2d_value_map(value_map, fields=["mean"]):
+def set_optimal():
+
+    ALL_STATE_KEYS = [
+        (dealer, player) for player in range(1, 22) for dealer in range(1, 11)
+    ]
+
+    for state_key in ALL_STATE_KEYS:
+
+        best_action_index, best_action_value = get_best_action(state_key)
+
+        optimal_state_values.set(state_key, best_action_value)
+        optimal_policy_values.set(state_key, best_action_index)
+
+
+def plot_2d_value_map(value_map_name):
     fig = plt.figure(figsize=(12, 12))
     ax = fig.add_subplot(111, projection="3d")
 
@@ -167,40 +147,69 @@ def plot_2d_value_map(value_map, fields=["mean"]):
     player = np.arange(1, 22, 1)
     X, Y = np.meshgrid(dealer, player)
 
-    for field in fields:
-        Z = np.array([[value_map.get((x, y), field) for x in dealer] for y in player])
+    Z = np.array([[eval(value_map_name).get((x, y)) for x in dealer] for y in player])
 
-        plt.xticks(dealer)
-        plt.yticks(player)
-        ax.set_xlabel("Dealer")
-        ax.set_ylabel("Player")
-        ax.set_zlabel(field)
-        plt.title(f"episode count: {episodes_count:.0e}")
+    plt.xticks(dealer)
+    plt.yticks(player)
+    ax.set_xlabel("Dealer")
+    ax.set_ylabel("Player")
+    ax.set_zlabel("Value")
+    plt.title(f"{value_map_name}, episode count: {episodes_count:.0e}")
 
-        ax.plot_surface(X, Y, Z)
+    ax.plot_surface(X, Y, Z)
+
+
+def plot_line(data):
+    plt.figure(figsize=(12, 12))
+    ax = plt.axes()
+    x = np.arange(1, len(data) + 1, 1)
+    ax.plot(x, data)
+
+
+def train(episodes_count):
+
+    optimal_state_values_mean_history = []
+
+    for _ in tqdm(range(BATCH)):
+
+        action_values.backup()
+        optimal_state_values.backup()
+
+        playout_and_learn()
+        episodes_count += EPISODES
+
+        set_optimal()
+
+        optimal_state_values_mean = optimal_state_values.mean()
+        print(f"optimal state values mean: {optimal_state_values_mean:.2f}")
+
+        optimal_state_values_mean_history.append(optimal_state_values_mean)
+
+        optimal_state_values_diff_change_rate = optimal_state_values.diff_change_rate()
+        print(
+            f"optimal state values diff change rate: {optimal_state_values_diff_change_rate:.2f}"
+        )
+
+        if abs(optimal_state_values_diff_change_rate) < 0.01:
+            print("state values have converged")
+            break
+
+        action_values_mean = action_values.mean()
+        print(f"action values mean: {action_values_mean:.2f}")
+
+        action_values_diff_change_rate = action_values.diff_change_rate()
+        print(f"action values diff change rate: {action_values_diff_change_rate:.2f}")
+
+        if abs(action_values_diff_change_rate) < 0.01:
+            print("state values have converged")
+            break
+
+    plot_2d_value_map("optimal_state_values")
+    plot_2d_value_map("optimal_policy_values")
+    plot_line(optimal_state_values_mean_history)
 
 
 try:
-    for _ in tqdm(range(10)):
-        policy_values.backup()
-        state_values.backup()
-
-        learning()
-        episodes_count += EPISODES
-        plot_2d_value_map(state_values)
-        plot_2d_value_map(policy_values)
-
-        print("policy diff: ", policy_values.diff())
-        print("state value diff: ", state_values.diff())
-
-        if policy_values.diff_change() < 0.01:
-            print("policy has converged")
-            break
-
-        if state_values.diff_change() < 0.01:
-            print("state values has converged")
-            break
-
-
+    train(episodes_count)
 except Exception as e:
     print(e)
