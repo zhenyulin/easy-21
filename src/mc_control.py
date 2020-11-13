@@ -164,8 +164,8 @@ def train():
         if optimal_policy_values.converged("diff", 0.001):
             break
 
-    plot_2d_value_map(optimal_state_values, "optimal_state_values", episodes_count)
-    plot_2d_value_map(optimal_policy_values, "optimal_policy_values", episodes_count)
+    plot_2d_value_map(optimal_state_values)
+    plot_2d_value_map(optimal_policy_values)
     plot_line(optimal_policy_values.metrics_history["diff"])
 
 

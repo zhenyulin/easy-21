@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # TODO: create an animation to show how the surface changes
-def plot_2d_value_map(value_map, name, episodes_count):
+def plot_2d_value_map(value_map):
     fig = plt.figure(figsize=(12, 12))
     ax = fig.add_subplot(111, projection="3d")
 
@@ -17,7 +17,7 @@ def plot_2d_value_map(value_map, name, episodes_count):
     ax.set_xlabel("Dealer")
     ax.set_ylabel("Player")
     ax.set_zlabel("Value")
-    plt.title(f"{name}, episode count: {episodes_count:.0e}")
+    plt.title(f"{value_map.name}, episode count: {value_map.total_count():.0e}")
 
     ax.plot_surface(X, Y, Z)
 

@@ -35,6 +35,9 @@ class ValueMap:
         self.init_if_not_found(key)
         return self.data[key]["count"]
 
+    def total_count(self):
+        return sum([self.data[key]["count"] for key in self.data.keys()])
+
     #
     # setter functions
     #
@@ -101,10 +104,6 @@ class ValueMap:
             return True
         else:
             return False
-
-    #
-    # plot functions
-    #
 
     #
     # file I/O functions
