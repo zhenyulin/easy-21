@@ -22,8 +22,14 @@ def plot_2d_value_map(value_map):
     ax.plot_surface(X, Y, Z)
 
 
-def plot_line(data):
+def plot_line(y, x=None):
     plt.figure(figsize=(12, 12))
+
     ax = plt.axes()
-    x = np.arange(1, len(data) + 1, 1)
-    ax.plot(x, data)
+    if x is None:
+        x = np.arange(1, len(y) + 1, 1)
+
+    if len(x) < 50:
+        plt.xticks(x)
+
+    ax.plot(x, y)

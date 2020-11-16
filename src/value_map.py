@@ -78,6 +78,15 @@ class ValueMap:
 
         return sqrt(sq_error / len(self.data.keys()))
 
+    def compare(self, other_value_map):
+        sq_error = 0
+        for key in self.data.keys():
+            other_value = other_value_map.get(key)
+            error = self.data[key]["value"] - other_value
+            sq_error += error ** 2
+
+        return sqrt(sq_error / len(self.data.keys()))
+
     #
     # metrics history function
     #

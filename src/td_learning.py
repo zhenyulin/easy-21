@@ -33,6 +33,9 @@ to weight in more later policies
 """
 action_values = ValueMap("action_values")
 
+optimal_action_values = ValueMap("optimal_action_values")
+optimal_action_values.load("optimal_action_values.json")
+
 
 def get_best_action(state_key):
     possible_action_values = [
@@ -90,8 +93,8 @@ def player_policy(state):
         return best_action_index
 
 
-def get_action_key_of_sequence_stop(sequence_stop):
-    state, action_index = sequence_stop
+def get_action_key_of_sequence_step(sequence_step):
+    state, action_index = sequence_step
     action_key = (
         state["dealer"],
         state["player"],
@@ -118,7 +121,6 @@ def sarsa_lambda_learn(sequence, reward=0, discount=1, lambda_value=1):
 
                 # intermediate 0 reward is ommited
                 # when sequence has been a full episode
-
                 # for m in range(n-1):
                 #     n_step_td_return += (discount ** m) * 0
 
@@ -128,7 +130,21 @@ def sarsa_lambda_learn(sequence, reward=0, discount=1, lambda_value=1):
                     n_step_td_return = (discount ** (N - 1)) * reward
 
                 # adding the discounted TD return
-                n_step_ahead_action_key = get_action_key_of_sequence_stop(
+                # compared to MC
+                # temporal-difference factored in the state-action-value
+                # it reaches to balance the impact of a sample
+                # it weighted by recency through forward-view lambda
+                #
+                # the smaller the lambda_value, the heavier weight
+                # on the head/recent event
+                # the larger the lambda_value, the equaler weights
+                #
+                # to achieve a total weights of (1 - lambda_value ** n)
+                # to be close to 1, the n needs to large enough
+                # if lambda_value is large
+                # so when lambda_value is large but n is small
+                # the total weights deviates the correct return
+                n_step_ahead_action_key = get_action_key_of_sequence_step(
                     sequence[s + n]
                 )
                 n_step_td_return += (discount ** n) * action_values.get(
@@ -144,11 +160,15 @@ def sarsa_lambda_learn(sequence, reward=0, discount=1, lambda_value=1):
                 else lambda_return / N
             )
         else:
+            # when lambda_value is set to 0
+            # put no weight on n_step_td_return
+            # using only the final reward of the episode
+            # which is equivalent to monte-carlo control
             lambda_return += reward
 
-        sequence_stop_s_action_key = get_action_key_of_sequence_stop(sequence[s])
+        sequence_step_s_action_key = get_action_key_of_sequence_step(sequence[s])
 
-        action_values.learn(sequence_stop_s_action_key, lambda_return)
+        action_values.learn(sequence_step_s_action_key, lambda_return)
 
 
 def playout_and_learn(lambda_value=1):
@@ -180,21 +200,31 @@ def playout_and_learn(lambda_value=1):
 
 def train():
     lambda_value_performance = []
+    lambda_value_range = np.arange(0, 1.1, 0.1)
 
-    for lambda_value in tqdm(np.arange(0, 1.1, 0.1)):
+    for lambda_value in tqdm(lambda_value_range):
         action_values.reset()
+        # also reset the state_count to reset
+        # epsilon-lambda player learning policy
         state_values.reset()
+
+        learning_curve_per_episode = []
 
         for _ in range(EPISODES):
             playout_and_learn(lambda_value=lambda_value)
 
-        action_values.backup()
-        action_values.load("optimal_action_values.json")
-        diff_to_optimal = action_values.diff()
-        print(diff_to_optimal)
-        lambda_value_performance.append(diff_to_optimal)
+            if lambda_value in [0.0, 1.0] and _ % 10 == 0:
+                learning_curve_per_episode.append(
+                    action_values.compare(optimal_action_values)
+                )
 
-    plot_line(lambda_value_performance)
+        if lambda_value in [0.0, 1.0]:
+            plot_line(learning_curve_per_episode)
+
+        lambda_value_performance.append(action_values.compare(optimal_action_values))
+
+    plot_line(lambda_value_performance, x=lambda_value_range)
+    plot_line(lambda_value_performance[:8], x=lambda_value_range[:8])
 
 
 try:
@@ -203,6 +233,10 @@ except Exception as e:
     print(e)
 
 # %%
+#
+# running full training to see how fast policy converges
+# at different lambda_value
+#
 
 EPISODES = int(1e5)
 BATCH = 100
@@ -248,7 +282,7 @@ def train():
     plot_2d_value_map(optimal_state_values)
     plot_2d_value_map(optimal_policy_values)
     plot_line(optimal_policy_values.metrics_history["diff"])
-    plot_line(optimal_policy_values.metrics_history["mean"])
+    plot_line(optimal_state_values.metrics_history["mean"])
 
 
 try:
