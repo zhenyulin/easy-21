@@ -20,7 +20,7 @@ class ValueStore:
             metrics_method = getattr(self, metrics_name)
             metrics = metrics_method()
 
-            if metrics_method not in self.metrics_history.keys():
+            if metrics_name not in self.metrics_history.keys():
                 self.metrics_history[metrics_name] = []
 
             self.metrics_history[metrics_name].append(metrics)
