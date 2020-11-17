@@ -29,10 +29,10 @@ watch:
 	@watchman-make -p 'src/**/*.py' -r 'make run'
 
 test:
-	@poetry run pytest src/__tests__/ -vv -s
+	@poetry run pytest src/ -vv -s
 
 test-coverage:
-	@poetry run pytest src/__tests__/ -vv -s --cov=src --cov-report=term-missing
+	@poetry run pytest src/ -vv -s --cov=src --cov-report=term-missing
 
 test-watch:
 	@watchman-make -p 'src/**/*.py' -r 'make test'
