@@ -3,16 +3,29 @@ import json
 from copy import deepcopy
 from math import sqrt
 
+from .value_store import ValueStore
 
-class ValueMap:
+
+class ValueMap(ValueStore):
+    """ValueMap
+
+    A key-value map to learn and store
+    sample means of from samples of
+    (state-action/state, value expectation)
+
+    Through a sufficient large samples of
+    trajectories, the true mean can be learnt
+
+    More effective sample methods such as
+    Monte-Carlo Learning, Temporal-Difference Learning, etc.
+    can be used to make the sample process more efficient
+    """
+
     def __init__(self, name):
-        self.name = name
+        ValueStore.__init__(self, name)
+
         self.data = {}
         self.cache = {}
-        self.metrics_history = {
-            "diff": [],
-            "mean": [],
-        }
 
     #
     # utility functions
@@ -46,6 +59,11 @@ class ValueMap:
 
         self.data[key]["count"] = 0
         self.data[key]["value"] = value
+
+    def list_set(self, key_list, value_list={}, value_func=None):
+        for key in key_list:
+            value = value_list[key] if value_func is None else value_func(key)
+            self.set(key, value)
 
     def learn(self, key, sample):
         self.init_if_not_found(key)
@@ -86,35 +104,6 @@ class ValueMap:
             sq_error += error ** 2
 
         return sqrt(sq_error / len(self.data.keys()))
-
-    #
-    # metrics history function
-    #
-    def record(self, metrics_names, log=True):
-        for metrics_name in metrics_names:
-            metrics_method = getattr(self, metrics_name)
-            metrics = metrics_method()
-            self.metrics_history[metrics_name].append(metrics)
-            if log:
-                print(f"{self.name}_{metrics_name}: {metrics:.3f}")
-
-            if metrics_name == "diff":
-                self.backup()
-
-    def converged(self, metrics_name, threshold, log=True):
-        last_3 = self.metrics_history[metrics_name][-4:-1]
-
-        if len(last_3) < 3:
-            return False
-
-        last_3_mean = sum(last_3) / len(last_3)
-
-        if last_3_mean < threshold:
-            if log:
-                print(f"{self.name}_{metrics_name} has converged")
-            return True
-        else:
-            return False
 
     #
     # file I/O functions
