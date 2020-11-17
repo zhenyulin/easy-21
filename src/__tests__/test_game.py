@@ -1,7 +1,7 @@
 import pytest
 
 from unittest import mock
-from src.game import sample, compare, hit, step, init_state, game
+from src.game import sample, compare, hit, step, init, game
 
 
 class TestSample:
@@ -170,7 +170,7 @@ class TestStep:
         }
 
 
-class TestInitState:
+class TestInit:
     @mock.patch("src.game.sample", return_value=10)
     def test_get_positive_sample(self, mock_sample):
         """
@@ -178,7 +178,7 @@ class TestInitState:
         where both the player and dealer
         get a positive sample card
         """
-        assert init_state() == {
+        assert init() == {
             "player": 10,
             "dealer": 10,
             "reward": None,
