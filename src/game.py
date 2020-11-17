@@ -4,11 +4,11 @@ import math
 from random import random
 
 
-def sample(initial=False):
+def sample(adding_only=False):
     value = 1 + math.floor(random() * 10)
     adding = random() * 3 < 2
     change = value if adding else -value
-    return value if initial else change
+    return value if adding_only else change
 
 
 def compare(state):
@@ -18,8 +18,8 @@ def compare(state):
     return reward
 
 
-def hit(party, state):
-    updated = state[party] + sample()
+def hit(party, state, adding_only=False):
+    updated = state[party] + sample(adding_only=adding_only)
     if updated > 21 or updated < 1:
         return {
             **state,
@@ -30,21 +30,21 @@ def hit(party, state):
         return {**state, party: updated}
 
 
-def step(state, player_stick, dealer_stick=None):
+def step(state, player_stick, dealer_stick=None, adding_only=False):
 
     if not player_stick:
-        return hit("player", state)
+        return hit("player", state, adding_only=adding_only)
 
     if player_stick and not dealer_stick:
-        return hit("dealer", state)
+        return hit("dealer", state, adding_only=adding_only)
 
     return {**state, "reward": compare(state)}
 
 
 def init():
     return {
-        "dealer": sample(initial=True),
-        "player": sample(initial=True),
+        "dealer": sample(adding_only=True),
+        "player": sample(adding_only=True),
         "reward": None,
     }
 

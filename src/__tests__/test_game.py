@@ -14,7 +14,7 @@ class TestSample:
         samples = []
 
         for _ in range(N):
-            samples.append(sample(initial=True))
+            samples.append(sample(adding_only=True))
 
         counts = {}
         for s in samples:
