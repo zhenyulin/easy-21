@@ -55,7 +55,7 @@ class ValueApproximator:
         derivative = features
         error = sample_target - value
         gradient = step_size * error * derivative
-        self.weights -= gradient
+        self.weights += gradient
 
     def backup(self):
         self.cache = np.copy(self.weights)

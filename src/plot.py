@@ -22,7 +22,7 @@ def plot_2d_value_map(value_map):
     ax.plot_surface(X, Y, Z)
 
 
-def plot_line(y, x=None):
+def plot_line(y, x=None, title=None):
     plt.figure(figsize=(12, 12))
 
     ax = plt.axes()
@@ -31,5 +31,8 @@ def plot_line(y, x=None):
 
     if len(x) < 50:
         plt.xticks(x)
+
+    if title is not None:
+        plt.title(title)
 
     ax.plot(x, y)

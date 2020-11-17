@@ -66,14 +66,75 @@ class TestGet:
 
 
 class Testlearn:
-    def test_update_weights(self):
+    def test_update_weights_to_learn_sample(self):
         value_approximator = ValueApproximator("value_approximator")
         value_approximator.weights = np.array([1.0, 1.0, 1.0])
-        assert np.array_equal(value_approximator.weights, [1.0, 1.0, 1.0])
+
         sample_input = [1, 2, 3]
         sample_target = 10
+        sample_value = value_approximator.get(sample_input)
+
         value_approximator.learn(sample_input, sample_target, step_size=0.1)
-        assert np.allclose(value_approximator.weights, [0.6, 0.2, -0.2])
+
+        assert np.allclose(value_approximator.weights, [1.4, 1.8, 2.2])
+
+        updated_sample_value = value_approximator.get(sample_input)
+        assert abs(sample_target - updated_sample_value) < abs(
+            sample_target - sample_value
+        )
+
+    def test_update_weights_to_learn_small_float_sample(self):
+        value_approximator = ValueApproximator("value_approximator")
+        value_approximator.weights = np.array([0.5, 0.5, 0.5])
+
+        sample_input = [1, 2, 3]
+        sample_target = 0.2
+        sample_value = value_approximator.get(sample_input)
+
+        value_approximator.learn(sample_input, sample_target, step_size=0.1)
+
+        assert np.allclose(
+            value_approximator.weights, [0.5 - 0.28, 0.5 - 2 * 0.28, 0.5 - 3 * 0.28]
+        )
+
+        updated_sample_value = value_approximator.get(sample_input)
+
+        assert abs(sample_target - updated_sample_value) < abs(
+            sample_target - sample_value
+        )
+
+    def test_learn_small_float_sample_with_small_step_size(self):
+        value_approximator = ValueApproximator("value_approximator")
+        value_approximator.weights = np.array([0.5, 0.5, 0.5])
+
+        sample_input = [1, 2, 3]
+        sample_target = 0.2
+        sample_value = value_approximator.get(sample_input)
+
+        value_approximator.learn(sample_input, sample_target)
+
+        updated_sample_value = value_approximator.get(sample_input)
+
+        assert abs(sample_target - updated_sample_value) < abs(
+            sample_target - sample_value
+        )
+
+    def test_learn_negative_small_float_sample_with_small_step_size(self):
+        value_approximator = ValueApproximator("value_approximator")
+        value_approximator.weights = np.array([0.5, 0.5, 0.5])
+
+        sample_input = [1, 2, 3]
+        sample_target = -0.2
+        sample_value = value_approximator.get(sample_input)
+
+        for _ in range(10):
+            value_approximator.learn(sample_input, sample_target)
+
+        updated_sample_value = value_approximator.get(sample_input)
+
+        assert abs(sample_target - updated_sample_value) < abs(
+            sample_target - sample_value
+        )
 
 
 class TestBackup:
@@ -118,6 +179,6 @@ def test_record():
     value_approximator.weights = np.array([1.0, 1.0, 1.0])
     value_approximator.backup()
     value_approximator.weights = np.array([1.2, 0.8, 1.2])
-    value_approximator.record(["diff"])
+    value_approximator.record(["diff"], log=False)
     assert np.allclose(value_approximator.metrics_history["diff"], [0.04])
     assert np.allclose(value_approximator.weights, value_approximator.cache)
