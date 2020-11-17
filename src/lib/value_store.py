@@ -14,6 +14,9 @@ class ValueStore:
     #
     # metrics history function
     #
+    def reset_metrics_history(self):
+        self.metrics_history = {}
+
     def record(self, metrics_names, log=True):
         for metrics_name in metrics_names:
 
