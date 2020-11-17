@@ -31,9 +31,9 @@ PLAYER = {
     # (state_)action_key -> expcted value/return
     "action_value_store": ValueMap("player_action_values"),
     # state_key -> max expected value/return
-    "optimal_state_value_store": ValueMap("player_optimal_state_values"),
+    "greedy_state_value_store": ValueMap("player_greedy_state_values"),
     # state_key -> action_index with max expected value/return
-    "optimal_policy_action_store": ValueMap("player_optimal_policy_actions"),
+    "greedy_policy_action_store": ValueMap("player_greedy_policy_actions"),
 }
 
 
@@ -80,6 +80,7 @@ def playout(exploration_rate=0.1):
 
 # TODO: can be integrated into ValueMap as .learn_episode
 # check how to reconcile with TD learning
+# ID: 412c4867-baba-46c7-a50b-8d609e9bd980
 def learn_episode(sequence, action_value_store, discount=1):
     S = len(sequence)
 
@@ -108,34 +109,37 @@ def train():
             learn_episode(player_sequence, PLAYER["action_value_store"])
 
         # TODO: integrate as a off-policy learning model?
-        PLAYER["optimal_policy_action_store"].list_set(
+        # Prequisite: 412c4867-baba-46c7-a50b-8d609e9bd980
+        PLAYER["greedy_policy_action_store"].list_set(
             ALL_STATE_KEYS,
             value_func=lambda x: greedy_policy(
                 x, ACTIONS, PLAYER["action_value_store"]
             )[0],
         )
-        PLAYER["optimal_state_value_store"].list_set(
+        PLAYER["greedy_state_value_store"].list_set(
             ALL_STATE_KEYS,
             value_func=lambda x: greedy_policy(
                 x, ACTIONS, PLAYER["action_value_store"]
             )[1],
         )
 
-        PLAYER["optimal_state_value_store"].record(["diff"])
+        PLAYER["greedy_state_value_store"].record(["diff"])
         # use optimal_state_value_store as convergence condition
         # rather than optimal_policy_action_store
         # as the latter is more likely to stuck for a short period
-        if PLAYER["optimal_state_value_store"].converged("diff", 0.001):
+        if PLAYER["greedy_state_value_store"].converged("diff", 0.001):
             break
 
-    plot_2d_value_map(PLAYER["optimal_state_value_store"])
-    plot_2d_value_map(PLAYER["optimal_policy_action_store"])
-    plot_line(PLAYER["optimal_state_value_store"].metrics_history["diff"])
+    plot_2d_value_map(PLAYER["greedy_state_value_store"])
+    plot_2d_value_map(PLAYER["greedy_policy_action_store"])
+    plot_line(PLAYER["greedy_state_value_store"].metrics_history["diff"])
 
 
 try:
     train()
-    PLAYER["action_value_store"].save("../output/optimal_action_values.json")
+    PLAYER["greedy_state_value_store"].save(
+        "../output/player_optimal_greedy_state_values.json"
+    )
 except Exception as e:
     print(e)
 
@@ -143,40 +147,47 @@ except Exception as e:
 #
 # check how exploration_rate impacts the speed of convergence
 #
+# run the same number of BATCH*EPISODES for different exploration_rate
+# check the error compared to the player_optimal_greedy_state_values
+#
+# RESULT: exploration_rate between [0.2, 0.8] shows better performance
+#
 import numpy as np
 from tqdm import tqdm
 
+player_optimal_greedy_state_values = ValueMap("player_optimal_greedy_state_values")
+player_optimal_greedy_state_values.load(
+    "../output/player_optimal_greedy_state_values.json"
+)
+
 
 def test_exploration_rate():
-    exploration_rate_convergence = []
-    exploration_rate_range = np.arange(0.1, 1.1, 0.2)
+    exploration_rate_range = np.arange(0.1, 1.1, 0.1)
+    exploration_rate_performance = []
 
     for exploration_rate in tqdm(exploration_rate_range):
+        print("exploration rate:", exploration_rate)
+
         PLAYER["action_value_store"].reset()
-        PLAYER["action_value_store"].reset_metrics_history()
 
-        for b in range(BATCH):
-            for _ in range(EPISODES):
-                player_sequence = playout(exploration_rate=exploration_rate)
-                learn_episode(player_sequence, PLAYER["action_value_store"])
+        for _ in range(5 * EPISODES):
+            player_sequence = playout(exploration_rate=exploration_rate)
+            learn_episode(player_sequence, PLAYER["action_value_store"])
 
-            PLAYER["optimal_state_value_store"].list_set(
-                ALL_STATE_KEYS,
-                value_func=lambda x: greedy_policy(
-                    x, ACTIONS, PLAYER["action_value_store"]
-                )[1],
+        PLAYER["greedy_state_value_store"].list_set(
+            ALL_STATE_KEYS,
+            value_func=lambda x: greedy_policy(
+                x, ACTIONS, PLAYER["action_value_store"]
+            )[1],
+        )
+
+        exploration_rate_performance.append(
+            PLAYER["greedy_state_value_store"].compare(
+                player_optimal_greedy_state_values
             )
+        )
 
-            PLAYER["optimal_state_value_store"].record(["diff"])
-            if PLAYER["optimal_state_value_store"].converged("diff", 0.001):
-                exploration_rate_convergence.append(b)
-                break
-
-            if b == BATCH:
-                # still append the batch count if not converged after all BATCH
-                exploration_rate_convergence.append(b)
-
-    plot_line(exploration_rate_convergence, x=exploration_rate_range)
+    plot_line(exploration_rate_performance, x=exploration_rate_range)
 
 
 try:
