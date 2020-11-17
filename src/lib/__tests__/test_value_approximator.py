@@ -1,10 +1,7 @@
-import pytest
-
 import numpy as np
 
-from unittest import mock
-from src.value_approximator import ValueApproximator
-from src.value_map import ValueMap
+from src.lib.value_approximator import ValueApproximator
+from src.lib.value_map import ValueMap
 
 
 class TestInit:
