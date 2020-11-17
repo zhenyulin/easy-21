@@ -106,6 +106,13 @@ def get_action_key_of_sequence_step(sequence_step):
 def sarsa_lambda_learn(sequence, reward=0, discount=1, lambda_value=1):
     S = len(sequence)
 
+    # QUESTION: does update in reversed range
+    # from steps closer to the latest sample first
+    # help to reduce the variance in the training?
+    #
+    # EXPERIMENT RESULT: it seems it is increasing the variance
+    # probably because this is increasing the impact of a sample
+    # instead of moving the value towards an expectation
     for s in range(S):
         # next steps available to look ahead
         N = S - (s + 1)
@@ -213,12 +220,12 @@ def train():
         for _ in range(EPISODES):
             playout_and_learn(lambda_value=lambda_value)
 
-            if lambda_value in [0.0, 1.0] and _ % 10 == 0:
+            if lambda_value in [0.0, 0.5, 1.0] and _ % 10 == 0:
                 learning_curve_per_episode.append(
                     action_values.compare(optimal_action_values)
                 )
 
-        if lambda_value in [0.0, 1.0]:
+        if lambda_value in [0.0, 0.5, 1.0]:
             plot_line(learning_curve_per_episode)
 
         lambda_value_performance.append(action_values.compare(optimal_action_values))
