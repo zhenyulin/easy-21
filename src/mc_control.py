@@ -84,7 +84,7 @@ def train():
 
         PLAYER.set_greedy_state_values()
 
-        PLAYER.greedy_state_values_record_diff()
+        PLAYER.greedy_state_value_store.record(["diff"])
 
         if PLAYER.greedy_state_values_converged():
             break

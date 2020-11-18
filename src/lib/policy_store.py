@@ -78,9 +78,6 @@ class PolicyStore:
             )
             self.greedy_state_value_store.set(state_key, greedy_action_value)
 
-    def greedy_state_values_record_diff(self):
-        self.greedy_state_value_store.record(["diff"])
-
     def greedy_state_values_converged(self):
         # greedy_state_values convergence guarantee optimal policy
         # as per Bell Optimality Equation
