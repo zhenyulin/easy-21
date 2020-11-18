@@ -1,62 +1,41 @@
 # %%
 from tqdm import trange
 
-from game import init, step, dummy_dealer_stick_policy
-from lib.value_map import ValueMap
-from lib.policy import e_greedy_policy, greedy_policy
+from game import init, step, dummy_player_stick_policy, dummy_dealer_stick_policy
+from lib.policy_store import PolicyStore
 from util.plot import plot_2d_value_map, plot_line
 
 EPISODES = int(1e5)
 BATCH = 100
 
-# the policy_action_store init with 0
-# because greedy_policy return smaller index
-# in case of the same action value
-# smaller index action is sampled more
-# if the exploration rate is low
-#
-# but when exploratio rate is good
-# the order of actions does not impact
-# how optimal_policy_action converges
-#
-# or if we use optimal_state_value as convergence condition
-# the order is not relevant
 ACTIONS = ["hit", "stick"]
 
-ALL_STATE_KEYS = [
-    (dealer, player) for player in range(1, 22) for dealer in range(1, 11)
-]
-
-PLAYER = {
-    # (state_)action_key -> expcted value/return
-    "action_value_store": ValueMap("player_action_values"),
-    # state_key -> max expected value/return
-    "greedy_state_value_store": ValueMap("player_greedy_state_values"),
-    # state_key -> action_index with max expected value/return
-    "greedy_policy_action_store": ValueMap("player_greedy_policy_actions"),
-}
+PLAYER = PolicyStore("player", ACTIONS)
 
 
 def in_key(state):
     return (state["dealer"], state["player"])
 
 
-# TODO: parameterise player and dealer policy
-# and add learning hooks
-def playout(exploration_rate=0.1):
-    player_sequence = []
+# TODO: add learning hooks
+# TODO: iron out the in_key
+def playout(
+    player_policy=dummy_player_stick_policy,
+    dealer_policy=dummy_dealer_stick_policy,
+    player_step_function=None,
+    dealer_step_function=None,
+):
+    player_episode = []
+    dealer_episode = []
 
     state = init()
 
     while state["reward"] is None:
-        player_action_index = e_greedy_policy(
-            in_key(state),
-            ACTIONS,
-            PLAYER["action_value_store"],
-            exploration_rate=exploration_rate,
-        )
+        player_action_index = player_policy(state)
+
         immediate_reward = 0
-        player_sequence.append([in_key(state), player_action_index, immediate_reward])
+        time_step = [in_key(state), player_action_index, immediate_reward]
+        player_episode.append(time_step)
 
         player_stick = player_action_index == ACTIONS.index("stick")
 
@@ -67,79 +46,59 @@ def playout(exploration_rate=0.1):
 
     while state["reward"] is None:
         player_stick = True
-        dealer_stick = dummy_dealer_stick_policy(state)
+        dealer_stick = dealer_policy(state)
+
+        dealer_action_index = ACTIONS.index("stick" if dealer_stick else "hit")
+
+        immediate_reward = 0
+        time_step = [in_key(state), dealer_action_index, immediate_reward]
+
+        dealer_episode.append(time_step)
         state = step(state, player_stick, dealer_stick)
 
     reward = state["reward"]
 
-    # update the last player step reward to the final reward
-    player_sequence[-1][-1] = reward
+    # update the last time step reward to the final reward
+    player_episode[-1][-1] = reward
+    if len(dealer_episode) > 0:
+        # if player busted, dealer will have no move
+        dealer_episode[-1][-1] = reward
 
-    return player_sequence
-
-
-# TODO: can be integrated into ValueMap as .learn_episode
-# check how to reconcile with TD learning
-# ID: 412c4867-baba-46c7-a50b-8d609e9bd980
-def learn_episode(sequence, action_value_store, discount=1):
-    S = len(sequence)
-
-    for s in range(S):
-        [state_key, action_index, immediate_reward] = sequence[s]
-
-        # the undiscounted immediate_reward
-        total_return = immediate_reward
-
-        # number of time steps in the sequence after step s
-        # N = S - 1 - s
-        # for n in [1,...,N] = range(1, N + 1) = range(1, S - s)
-        # calculate the discounted total future return G_t
-        for n in range(1, S - s):
-            reward_after_n_step = sequence[s + n][2]
-            total_return += (discount ** n) * reward_after_n_step
-
-        action_value_store.learn((*state_key, action_index), total_return)
+    return player_episode
 
 
 def train():
 
     for _ in trange(BATCH, leave=True):
         for _ in range(EPISODES):
-            player_sequence = playout(exploration_rate=0.5)
-            learn_episode(player_sequence, PLAYER["action_value_store"])
+            # using e_greedy_policy for policy iteration
+            # Monte Carlo Control = Monte Carlo Learning & Policy Iteration
+            # TODO: confirm all the naming concepts
+            player_episode = playout(
+                player_policy=lambda state: PLAYER.e_greedy_policy(
+                    in_key(state),
+                    exploration_rate=0.5,
+                ),
+            )
+            PLAYER.monte_carlo_learning(player_episode)
 
-        # TODO: integrate as a off-policy learning model?
-        # Prequisite: 412c4867-baba-46c7-a50b-8d609e9bd980
-        PLAYER["greedy_policy_action_store"].list_set(
-            ALL_STATE_KEYS,
-            value_func=lambda x: greedy_policy(
-                x, ACTIONS, PLAYER["action_value_store"]
-            )[0],
-        )
-        PLAYER["greedy_state_value_store"].list_set(
-            ALL_STATE_KEYS,
-            value_func=lambda x: greedy_policy(
-                x, ACTIONS, PLAYER["action_value_store"]
-            )[1],
-        )
+        PLAYER.set_greedy_state_values()
 
-        PLAYER["greedy_state_value_store"].record(["diff"])
-        # use optimal_state_value_store as convergence condition
-        # rather than optimal_policy_action_store
-        # as the latter is more likely to stuck for a short period
-        if PLAYER["greedy_state_value_store"].converged("diff", 0.001):
+        PLAYER.greedy_state_values_record_diff()
+
+        if PLAYER.greedy_state_values_converged():
             break
 
-    plot_2d_value_map(PLAYER["greedy_state_value_store"])
-    plot_2d_value_map(PLAYER["greedy_policy_action_store"])
-    plot_line(PLAYER["greedy_state_value_store"].metrics_history["diff"])
+    # TODO: integrate plot into policy store?
+    # need more generic x,y
+    plot_2d_value_map(PLAYER.greedy_state_value_store)
+    plot_2d_value_map(PLAYER.greedy_policy_action_store)
+    plot_line(PLAYER.greedy_state_value_store.metrics_history["diff"])
 
 
 try:
     train()
-    PLAYER["greedy_state_value_store"].save(
-        "../output/player_optimal_greedy_state_values.json"
-    )
+    PLAYER.set_and_save_optimal_state_values()
 except Exception as e:
     print(e)
 
@@ -155,10 +114,7 @@ except Exception as e:
 import numpy as np
 from tqdm import tqdm
 
-player_optimal_greedy_state_values = ValueMap("player_optimal_greedy_state_values")
-player_optimal_greedy_state_values.load(
-    "../output/player_optimal_greedy_state_values.json"
-)
+PLAYER.load_optimal_state_values()
 
 
 def test_exploration_rate():
@@ -168,23 +124,21 @@ def test_exploration_rate():
     for exploration_rate in tqdm(exploration_rate_range):
         print("exploration rate:", exploration_rate)
 
-        PLAYER["action_value_store"].reset()
+        PLAYER.action_value_store.reset()
 
         for _ in range(5 * EPISODES):
-            player_sequence = playout(exploration_rate=exploration_rate)
-            learn_episode(player_sequence, PLAYER["action_value_store"])
+            player_episode = playout(
+                player_policy=lambda state: PLAYER.e_greedy_policy(
+                    in_key(state),
+                    exploration_rate=exploration_rate,
+                ),
+            )
+            PLAYER.monte_carlo_learning(player_episode)
 
-        PLAYER["greedy_state_value_store"].list_set(
-            ALL_STATE_KEYS,
-            value_func=lambda x: greedy_policy(
-                x, ACTIONS, PLAYER["action_value_store"]
-            )[1],
-        )
+        PLAYER.set_greedy_state_values()
 
         exploration_rate_performance.append(
-            PLAYER["greedy_state_value_store"].compare(
-                player_optimal_greedy_state_values
-            )
+            PLAYER.greedy_state_value_store.compare(PLAYER.optimal_state_value_store)
         )
 
     plot_line(exploration_rate_performance, x=exploration_rate_range)
