@@ -52,6 +52,8 @@ class ValueApproximator:
         value, features = self.get(sample_input, output_features=True)
         # using mean squared error as the objective function
         # O(weights) = E[(target - features * weights)**2]
+        # Nabla_{w}O(w) = -2 * features
+        # we take gradient = -0.5* step_size * error * Nabla_{w}O(w) = features
         derivative = features
         error = sample_target - value
         gradient = step_size * error * derivative

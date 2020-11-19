@@ -20,6 +20,13 @@ class PolicyStore:
         # right convergence condition and exploration rate are important
         self.ACTIONS = ACTIONS
 
+        #
+        # convergence order
+        # greedy_policy_actions(might stuck)
+        # > greedy_state_values(true)
+        # > action_values(true)
+        # > state_values(depends on e_greedy_policy)
+        #
         self.state_value_store = ValueMap(f"{name}_state_values")
         self.action_value_store = ValueMap(f"{name}_action_values")
         self.greedy_state_value_store = ValueMap(f"{name}_greedy_state_values")

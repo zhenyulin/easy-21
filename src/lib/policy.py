@@ -61,12 +61,15 @@ def e_greedy_policy(
     * Exploration Rate
     There're many ways to set the exploration_rate
     the key is to ensure that all possible actions have a sufficient samples
-    compared to the scale of possible trajectories from that state-action on
+    compared to the scale of possible trajectories from that state-action on.
 
     It uses a constant rate of 0.1 by default.
     Depends on the stop strategy, it can also be constructed to decrease
     with the increase of sample episodes, or even factor in state_count.
     When set to 1, it is effectively trying to sample all possible trajectories.
+
+    GLIE - Greedy in the Limit with Infinite Exploration
+    reference: L5 RL by David Silver
     """
 
     greedy_action_index, _ = greedy_policy(state_key, ACTIONS, action_value_store)
