@@ -34,17 +34,13 @@ def test_lambda_value_performance():
 
             if lambda_value in [0.0, 1.0] and _ % 10 == 0:
                 learning_curve_per_episode.append(
-                    PLAYER.greedy_state_value_store.compare(
-                        PLAYER.optimal_state_value_store
-                    )
+                    PLAYER.compare_learning_progress_with_optimal()
                 )
 
         if lambda_value in [0.0, 1.0]:
             plot_line(learning_curve_per_episode, title=f"lambda_value: {lambda_value}")
 
-        lambda_value_performance.append(
-            PLAYER.greedy_state_value_store.compare(PLAYER.optimal_state_value_store)
-        )
+        lambda_value_performance.append(PLAYER.compare_learning_progress_with_optimal())
 
     plot_line(lambda_value_performance, x=lambda_value_range)
 

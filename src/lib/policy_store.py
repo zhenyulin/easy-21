@@ -270,16 +270,6 @@ class PolicyStore:
             )
             self.greedy_state_value_store.set(state_key, greedy_action_value)
 
-    def greedy_state_values_converged(self):
-        # greedy_state_values convergence guarantee optimal policy
-        # as per Bell Optimality Equation
-        # TODO: add reference
-        #
-        # greedy_policy_actions can also be used as convergence condition
-        # to find optimal policy, but it is more likely to stuck
-        # with the current convergence check method - mean last 3 batch diff
-        return self.greedy_state_value_store.converged("diff", 0.001)
-
     def set_and_save_optimal_state_values(self, path=None):
         self.optimal_state_value_store.data = deepcopy(
             self.greedy_state_value_store.data
@@ -292,3 +282,6 @@ class PolicyStore:
         self.optimal_state_value_store.load(
             self.default_file_path_for_optimal_state_values if path is None else path
         )
+
+    def compare_learning_progress_with_optimal(self):
+        return self.greedy_state_value_store.compare(self.optimal_state_value_store)

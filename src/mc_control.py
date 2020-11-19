@@ -27,16 +27,17 @@ def train():
             PLAYER.monte_carlo_learning(player_episode)
 
         PLAYER.set_greedy_state_values()
+        PLAYER.set_greedy_policy_actions()
 
         PLAYER.greedy_state_value_store.record(["diff"])
-
-        if PLAYER.greedy_state_values_converged():
+        if PLAYER.greedy_state_value_store.converged("diff", 0.001):
             break
 
     # TODO: integrate plot into policy store?
     # need more generic x,y
     plot_2d_value_map(PLAYER.greedy_state_value_store)
     plot_2d_value_map(PLAYER.greedy_policy_action_store)
+
     plot_line(PLAYER.greedy_state_value_store.metrics_history["diff"])
 
 
@@ -82,7 +83,7 @@ def test_exploration_rate():
         PLAYER.set_greedy_state_values()
 
         exploration_rate_performance.append(
-            PLAYER.greedy_state_value_store.compare(PLAYER.optimal_state_value_store)
+            PLAYER.compare_learning_progress_with_optimal()
         )
 
     plot_line(exploration_rate_performance, x=exploration_rate_range)
