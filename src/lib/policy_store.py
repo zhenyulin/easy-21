@@ -33,12 +33,14 @@ class PolicyStore:
         self.greedy_policy_action_store = ValueMap(f"{name}_greedy_policy_actions")
         self.optimal_state_value_store = ValueMap(f"{name}_optimal_state_values")
 
+        self.action_eligibility_trace = EligibilityTrace()
+
         self.default_file_path_for_optimal_state_values = (
             f"../output/{self.name}_optimal_state_values.json"
         )
 
     #
-    # Learning Functions
+    # Control Policy Functions
     #
     def e_greedy_policy(self, state_key, exploration_rate=0.1):
         action_index = e_greedy_policy(
@@ -49,9 +51,31 @@ class PolicyStore:
         )
         return action_index
 
+    #
+    # Learning Functions (Incremental Update)
+    #
     def monte_carlo_learning(self, episode, discount=1):
+        """monte_carlo_learning
+
+        - model-free learning of complete epiodes of experience
+        - use the simplest idea: value = mean return
+        - use empirical/running mean return instead of exected return
+        - Caveat: can only be applied to episodic MDPs (must terminate)
+
+
+        Arguments:
+          episode {list} -- the complete sequence with an end
+
+        Keyword Arguments:
+          discount {number} -- discount factor for future rewards (default: {1})
+        """
         S = len(episode)
 
+        # incremental monte-carlo update
+        # to converge the state value/action value
+        # as per the policy producing the episode
+        # with policy improvement
+        # it is graduall convergin to the optial
         for s in range(S):
             [state_key, action_index, immediate_reward] = episode[s]
 
@@ -72,10 +96,6 @@ class PolicyStore:
                 total_return,
             )
 
-    #
-    # TODO: clarify control vs learning
-    # is it basically difference over state vs action?
-    #
     def temporal_difference_learning(
         self,
         sequence,
@@ -84,8 +104,9 @@ class PolicyStore:
     ):
         """temporal difference learning
 
-        learning from sequence of incomplete episode
-        bootstrapping the remaining trajectory
+        - learning from sequence of incomplete episode
+        - works in continuing (non-terminating) environment
+        - bootstrapping the return of the remaining trajectory
         estimated by the discounted last action value
 
         TD_return, Q_return/average_TD_return factor in the contribution
@@ -124,8 +145,12 @@ class PolicyStore:
 
                 if n == S - 1:
                     # factor in the final reward where there's no further action
+                    # TODO: update this to an online learning version
                     average_td_target += (total_reward - average_td_target) / (n + 1)
 
+            # the state value sample should be from state value estimation
+            # here it is learnt mainly to count the state
+            self.state_value_store.learn(state_key, average_td_target)
             self.action_value_store.learn(
                 (*state_key, action_index),
                 average_td_target,
@@ -220,42 +245,80 @@ class PolicyStore:
         sequence,
         discount=1,
         lambda_value=1,
+        final=False,
     ):
-        S = len(sequence)
+        """backward_sarsa_lambda_learning
 
-        for s in range(S):
-            action_elibility_trace = EligibilityTrace()
+        Instead of looking into the future steps like forward sarsa
+        trying to estimate the return of the remaining trajectory
+        using discounted state/action value
+        and learn the state/action value in one go
 
-            [state_key, action_index, immediate_reward] = sequence[s]
+        Backward sarsa update all previous steps
+        with their contribution to the current step return
+        of reward plus td return of discounted state/action value
+        together with eligibility_trace to factor in both
+        recency and frequency
+
+        Lambda Value
+        When lambda=0, only the current state is updated
+        It is equivalent to TD(0).
+        When lambda=1, credit is not decayed but only discounted
+        It is equivalent to MC at the end of the episode, in offline mode.
+
+        Online mode:
+        Backward view is equivalent to forward view only when lambda_value=0.
+        Exact online learning algorithm is equivalent to Forward view
+        in other situations.
+
+        # TODO: support offline mode?
+        """
+        td_target = None
+        if final:
+            [state_key, action_index, reward] = sequence[-1]
             state_action_key = (*state_key, action_index)
 
-            action_elibility_trace.update(state_action_key)
-            # the undiscounted immediate_reward
-            total_return = immediate_reward
+            self.action_eligibility_trace.update(
+                state_action_key, discount=discount, lambda_value=lambda_value
+            )
+            td_target = reward
+        elif len(sequence) > 1:
+            [state_key, action_index, immediate_reward] = sequence[-2]
+            state_action_key = (*state_key, action_index)
+            [new_state_key, new_action_index, _] = sequence[-1]
+            new_state_action_key = (*new_state_key, new_action_index)
 
-            # lookahead 1 step only
-            if s + 1 < S:
-                [
-                    state_key_next,
-                    action_index_next,
-                    reward_next,
-                ] = sequence[s + 1]
-
-                next_action_value = self.action_value_store.get(
-                    (*state_key_next, action_index_next)
-                )
-                td_return = discount * next_action_value
-                total_return += td_return
-
-            eligibility = action_elibility_trace.get(state_action_key)
-            self.action_value_store.learn(
-                state_action_key,
-                total_return,
-                step_size=lambda count: eligibility / count,
+            self.action_eligibility_trace.update(
+                state_action_key, discount=discount, lambda_value=lambda_value
+            )
+            td_target = immediate_reward + discount * self.action_value_store.get(
+                new_state_action_key
             )
 
+        if td_target is not None:
+            # update all past event for their contribution once
+            # avoid multiple updates if one event occured multiple times
+            for action_key in self.action_eligibility_trace.keys():
+                eligibility = self.action_eligibility_trace.get(action_key)
+                # here the count is inflated excessively
+                # but it is ok as long as we get a diminishing step_size
+                self.action_value_store.learn(
+                    action_key,
+                    td_target,
+                    step_size=lambda count: eligibility / count,
+                )
+
+        if final:
+            self.action_eligibility_trace.reset()
+
+    #
     # Helper Functions
     #
+    def extract_state_keys_from_action_store(self):
+        state_action_keys = self.action_value_store.keys()
+        state_keys = set([key[:-1] for key in state_action_keys])
+        return state_keys
+
     def set_greedy_policy_actions(self):
         for state_key in self.state_value_store.keys():
             greedy_action_index, _ = greedy_policy(
@@ -264,7 +327,8 @@ class PolicyStore:
             self.greedy_policy_action_store.set(state_key, greedy_action_index)
 
     def set_greedy_state_values(self):
-        for state_key in self.state_value_store.keys():
+        state_keys = self.extract_state_keys_from_action_store()
+        for state_key in state_keys:
             _, greedy_action_value = greedy_policy(
                 state_key, self.ACTIONS, self.action_value_store
             )

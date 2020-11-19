@@ -16,6 +16,9 @@ class EligibilityTrace:
         self.init_if_not_found(key)
         return self.data[key]
 
+    def keys(self):
+        return self.data.keys()
+
     #
     # setter functions
     #

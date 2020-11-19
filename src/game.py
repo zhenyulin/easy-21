@@ -94,25 +94,29 @@ def game(
     return state
 
 
-# TODO: add learning hooks
-# TODO: clean up the game process a bit
+# TODO: test
 def playout(
     player_policy=dummy_player_stick_policy,
     dealer_policy=dummy_dealer_stick_policy,
-    player_step_function=None,
-    dealer_step_function=None,
+    player_online_learning=lambda x: x,
+    player_episode_learning=lambda x: x,
+    dealer_online_learning=lambda x: x,
+    dealer_episode_learning=lambda x: x,
 ):
-    player_episode = []
-    dealer_episode = []
+    player_sequence = []
+    dealer_sequence = []
 
     state = init()
 
     while state["reward"] is None:
+        # learn the sequence from last action when episode is ended
+        player_online_learning(player_sequence)
+
         player_action_index = player_policy(in_key(state))
 
         immediate_reward = 0
         time_step = [in_key(state), player_action_index, immediate_reward]
-        player_episode.append(time_step)
+        player_sequence.append(time_step)
 
         player_stick = player_action_index == ACTIONS.index("stick")
 
@@ -122,6 +126,9 @@ def playout(
         state = step(state, player_stick)
 
     while state["reward"] is None:
+        # learn the sequence from last action when episode is ended
+        dealer_online_learning(dealer_sequence)
+
         player_stick = True
         dealer_stick = dealer_policy(in_key(state))
 
@@ -130,15 +137,19 @@ def playout(
         immediate_reward = 0
         time_step = [in_key(state), dealer_action_index, immediate_reward]
 
-        dealer_episode.append(time_step)
+        dealer_sequence.append(time_step)
+
         state = step(state, player_stick, dealer_stick)
 
     reward = state["reward"]
 
     # update the last time step reward to the final reward
-    player_episode[-1][-1] = reward
-    if len(dealer_episode) > 0:
-        # if player busted, dealer will have no move
-        dealer_episode[-1][-1] = reward
+    player_sequence[-1][-1] = reward
+    player_episode_learning(player_sequence)
 
-    return player_episode
+    if len(dealer_sequence) > 0:
+        # if player busted, dealer will have no move
+        dealer_sequence[-1][-1] = -reward
+        dealer_episode_learning(dealer_sequence)
+
+    return player_sequence

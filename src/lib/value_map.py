@@ -65,7 +65,12 @@ class ValueMap(ValueStore):
             value = value_list[key] if value_func is None else value_func(key)
             self.set(key, value)
 
-    def learn(self, key, sample, step_size=lambda count: 1 / count):
+    def learn(
+        self,
+        key,
+        sample,
+        step_size=lambda count: 1 / count,
+    ):
         self.init_if_not_found(key)
 
         d = self.data[key]
