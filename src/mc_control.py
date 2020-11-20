@@ -15,16 +15,13 @@ def train():
 
     for _ in trange(BATCH, leave=True):
         for _ in range(EPISODES):
-            # using e_greedy_policy for policy iteration
-            # Monte Carlo Control = Monte Carlo Learning & Policy Iteration
-            # TODO: confirm all the naming concepts
-            player_episode = playout(
+            playout(
                 player_policy=lambda state_key: PLAYER.e_greedy_policy(
                     state_key,
                     exploration_rate=0.5,
                 ),
+                player_offline_learning=PLAYER.monte_carlo_learning_offline,
             )
-            PLAYER.monte_carlo_learning(player_episode)
 
         PLAYER.set_greedy_state_values()
         PLAYER.set_greedy_policy_actions()
@@ -72,13 +69,13 @@ def test_exploration_rate():
         PLAYER.action_value_store.reset()
 
         for _ in range(5 * EPISODES):
-            player_episode = playout(
+            playout(
                 player_policy=lambda state_key: PLAYER.e_greedy_policy(
                     state_key,
                     exploration_rate=exploration_rate,
                 ),
+                player_offline_learning=PLAYER.monte_carlo_learning_offline,
             )
-            PLAYER.monte_carlo_learning(player_episode)
 
         PLAYER.set_greedy_state_values()
 

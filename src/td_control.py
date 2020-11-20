@@ -13,16 +13,16 @@ PLAYER = PolicyStore("player", ACTIONS)
 PLAYER.load_optimal_state_values()
 
 # %%
-# test forward_sarsa_lambda_learning with different lambda value
+# test forward_td_lambda_learning with different lambda value
 #
-# when lambda_value = 1, it is equivalent to MC, (1-lambda_value)*td_return
-# when lambda_value = 0, it is equivalent to 1 step lookahead TD(0), 0**0=1
+# forward TD(0) is equivalent to one-step lookahead
+# forward TD(1) is equivalent to MC learning
 #
 # as expected, the learning curves show that
-# MC has more variance but less bias in the result (1000 episodes)
-# but with more episodes TD shows better result to converge quicker
+# MC/TD(1) has more variance
 #
 # between [0.1, 0.9], small lambda_value assigns more weight on recent steps
+# (weights decreases quicker by *0.1)
 # while a short sequence episode can result in final_reward weighted heavily
 # so the lambda_value performance is not linearly correlated to value
 #
@@ -41,9 +41,10 @@ def test_lambda_value_performance():
         learning_curve_per_episode = []
 
         for _ in range(EPISODES):
-            player_episode = playout(player_policy=PLAYER.e_greedy_policy)
-
-            PLAYER.forward_sarsa_lambda_learning(player_episode)
+            playout(
+                player_policy=PLAYER.e_greedy_policy,
+                player_offline_learning=PLAYER.forward_td_lambda_learning_offline,
+            )
 
             PLAYER.set_greedy_state_values()
 
@@ -86,14 +87,8 @@ def test_backward_sarsa_lambda():
         for _ in range(EPISODES):
             playout(
                 player_policy=PLAYER.e_greedy_policy,
-                player_online_learning=lambda sequence: PLAYER.backward_sarsa_lambda_learning(
-                    sequence,
-                    lambda_value=lambda_value,
-                ),
-                player_episode_learning=lambda episode: PLAYER.backward_sarsa_lambda_learning(
-                    episode,
-                    lambda_value=lambda_value,
-                    final=True,
+                player_online_learning=lambda sequence, final=False: PLAYER.backward_td_lambda_learning_online(
+                    sequence, lambda_value=lambda_value, final=final
                 ),
             )
 
@@ -114,44 +109,5 @@ def test_backward_sarsa_lambda():
 
 try:
     test_backward_sarsa_lambda()
-except Exception as e:
-    print(e)
-
-# %%
-# test temporal_difference_learning with different lookahead steps
-#
-# the performance is relatively random whether do online/offline learning
-# but average weight generally performs worse than lambda_value
-# this probably large depends on the actual samples during the training
-# and how well each action value has been updated
-
-
-def test_lookahead_steps_performance():
-
-    lookahead_steps_range = range(1, 10)
-    lookahead_steps_performance = []
-
-    for lookahead_steps in tqdm(lookahead_steps_range):
-        print("lookahead_steps: ", lookahead_steps)
-
-        PLAYER.action_value_store.reset()
-
-        for _ in range(EPISODES):
-            player_episode = playout(player_policy=PLAYER.e_greedy_policy)
-            PLAYER.temporal_difference_learning(
-                player_episode, lookahead_steps=lookahead_steps
-            )
-
-        PLAYER.set_greedy_state_values()
-
-        lookahead_steps_performance.append(
-            PLAYER.compare_learning_progress_with_optimal()
-        )
-
-    plot_line(lookahead_steps_performance, x=lookahead_steps_range)
-
-
-try:
-    test_lookahead_steps_performance()
 except Exception as e:
     print(e)

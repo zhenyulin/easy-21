@@ -95,13 +95,14 @@ def game(
 
 
 # TODO: test
+# TODO: refactor to work with online sarsa better
 def playout(
     player_policy=dummy_player_stick_policy,
     dealer_policy=dummy_dealer_stick_policy,
-    player_online_learning=lambda x: x,
-    player_episode_learning=lambda x: x,
-    dealer_online_learning=lambda x: x,
-    dealer_episode_learning=lambda x: x,
+    player_online_learning=lambda x, final=False: x,
+    player_offline_learning=lambda x: x,
+    dealer_online_learning=lambda x, final=False: x,
+    dealer_offline_learning=lambda x: x,
 ):
     player_sequence = []
     dealer_sequence = []
@@ -109,14 +110,18 @@ def playout(
     state = init()
 
     while state["reward"] is None:
-        # learn the sequence from last action when episode is ended
-        player_online_learning(player_sequence)
-
         player_action_index = player_policy(in_key(state))
 
         immediate_reward = 0
         time_step = [in_key(state), player_action_index, immediate_reward]
         player_sequence.append(time_step)
+
+        # online algorithm typically learn a SARSA sequence
+        # so unless final is specified, the last reward is
+        # not taken into account
+        # final is specified when the final reward is confirmed
+        # at the end of game
+        player_online_learning(player_sequence)
 
         player_stick = player_action_index == ACTIONS.index("stick")
 
@@ -126,8 +131,6 @@ def playout(
         state = step(state, player_stick)
 
     while state["reward"] is None:
-        # learn the sequence from last action when episode is ended
-        dealer_online_learning(dealer_sequence)
 
         player_stick = True
         dealer_stick = dealer_policy(in_key(state))
@@ -136,8 +139,10 @@ def playout(
 
         immediate_reward = 0
         time_step = [in_key(state), dealer_action_index, immediate_reward]
-
         dealer_sequence.append(time_step)
+
+        # see player part
+        dealer_online_learning(dealer_sequence)
 
         state = step(state, player_stick, dealer_stick)
 
@@ -145,11 +150,13 @@ def playout(
 
     # update the last time step reward to the final reward
     player_sequence[-1][-1] = reward
-    player_episode_learning(player_sequence)
+    player_online_learning(player_sequence, final=True)
+    player_offline_learning(player_sequence)
 
     if len(dealer_sequence) > 0:
         # if player busted, dealer will have no move
         dealer_sequence[-1][-1] = -reward
-        dealer_episode_learning(dealer_sequence)
+        dealer_online_learning(dealer_sequence, final=True)
+        dealer_offline_learning(dealer_sequence)
 
     return player_sequence
