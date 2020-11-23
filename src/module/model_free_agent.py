@@ -1,6 +1,7 @@
 from copy import deepcopy
 
 from src.lib.value_map import ValueMap
+from src.lib.value_approximator import ValueApproximator
 from src.lib.eligibility_trace import EligibilityTrace
 from src.lib.policy import e_greedy_policy, greedy_policy
 
@@ -20,7 +21,7 @@ class ModelFreeAgent:
     - control = value learning & policy iteration
     """
 
-    def __init__(self, name, ACTIONS):
+    def __init__(self, name, ACTIONS, use_approximator=False, feature_function=lambda x: x):
         """
         ACTIONS:
         the order of the actions should not be relavent
@@ -38,7 +39,10 @@ class ModelFreeAgent:
 
         self.ACTIONS = ACTIONS
 
-        self.action_value_store = ValueMap(f"{name}_action_values")
+        self.use_approximator = use_approximator
+
+        self.action_value_store = ValueMap(f"{name}_action_values") if not use_approximator else ValueApproximator(f"{name}_action_value_approximator", feature_function=feature_function)
+
         self.greedy_state_value_store = ValueMap(f"{name}_greedy_state_values")
         self.greedy_policy_action_store = ValueMap(f"{name}_greedy_policy_actions")
 
@@ -303,16 +307,16 @@ class ModelFreeAgent:
         state_keys = set([key[:-1] for key in state_action_keys])
         return state_keys
 
-    def set_greedy_policy_actions(self):
-        state_keys = self.extract_state_keys_from_action_store()
+    def set_greedy_policy_actions(self, all_state_keys=None):
+        state_keys = self.extract_state_keys_from_action_store() if all_state_keys is None else all_state_keys
         for state_key in state_keys:
             greedy_action_index, _ = greedy_policy(
                 state_key, self.ACTIONS, self.action_value_store
             )
             self.greedy_policy_action_store.set(state_key, greedy_action_index)
 
-    def set_greedy_state_values(self):
-        state_keys = self.extract_state_keys_from_action_store()
+    def set_greedy_state_values(self, all_state_keys=None):
+        state_keys = self.extract_state_keys_from_action_store() if all_state_keys is None else all_state_keys
         for state_key in state_keys:
             _, greedy_action_value = greedy_policy(
                 state_key, self.ACTIONS, self.action_value_store

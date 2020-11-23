@@ -1,7 +1,9 @@
 import numpy as np
 
+from .value_store import ValueStore
 
-class ValueApproximator:
+
+class ValueApproximator(ValueStore):
     """ValueApproximator
 
     A model to store trainable parameters
@@ -16,14 +18,13 @@ class ValueApproximator:
     """
 
     def __init__(self, name, feature_function=lambda x: x):
+        ValueStore.__init__(self, name)
+
         self.name = name
         self.feature_function = feature_function
 
         self.weights = np.array([])
         self.cache = np.array([])
-        self.metrics_history = {
-            "diff": [],
-        }
 
     #
     # utility functions
@@ -59,6 +60,15 @@ class ValueApproximator:
         gradient = step_size * error * derivative
         self.weights += gradient
 
+    def learn_with_eligibility_trace(
+        self,
+        eligibility_trace,
+        sample,
+    ):
+        for key in eligibility_trace.keys():
+            eligibility = eligibility_trace.get(key)
+            self.learn(key, sample, step_size=eligibility * 0.01)
+
     def backup(self):
         self.cache = np.copy(self.weights)
 
@@ -74,7 +84,7 @@ class ValueApproximator:
             self.cache = np.zeros_like(self.weights)
         return (np.square(self.weights - self.cache)).mean(axis=0)
 
-    def compare_value_map(self, value_map):
+    def compare(self, value_map):
         sq_error = 0
         for key in value_map.keys():
             other_value = value_map.get(key)
@@ -82,35 +92,6 @@ class ValueApproximator:
             sq_error += error ** 2
 
         return np.sqrt(sq_error / len(value_map.keys()))
-
-    #
-    # metrics history function
-    #
-    def record(self, metrics_names, log=True):
-        for metrics_name in metrics_names:
-            metrics_method = getattr(self, metrics_name)
-            metrics = metrics_method()
-            self.metrics_history[metrics_name].append(metrics)
-            if log:
-                print(f"{self.name}_{metrics_name}: {metrics:.3f}")
-
-            if metrics_name == "diff":
-                self.backup()
-
-    def converged(self, metrics_name, threshold, log=True):
-        last_3 = self.metrics_history[metrics_name][-4:-1]
-
-        if len(last_3) < 3:
-            return False
-
-        last_3_mean = sum(last_3) / len(last_3)
-
-        if last_3_mean < threshold:
-            if log:
-                print(f"{self.name}_{metrics_name} has converged")
-            return True
-        else:
-            return False
 
     #
     # file I/O functions
