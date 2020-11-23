@@ -4,9 +4,11 @@
 
 # sensitive
 **credential**
-output**
-data**
-model**
+**output**
+**data**
+**model**
+
+!**model*.py
 
 # test
 .coverage
