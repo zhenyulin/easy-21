@@ -391,3 +391,37 @@ class TestBackwardTemporalDifferenceLambdaLearning:
         assert test.action_value_store.data == {
             (0, 0, 0): {"count": 1, "value": 1.0},
         }
+
+    def test_two_step_episode_for_eligibility(self):
+        test = PolicyStore("test", ACTIONS)
+
+        mock_learn = CopyMock(wraps=test.action_value_store.learn)
+        test.action_value_store.learn = mock_learn
+
+        mock_update = CopyMock(wraps=test.action_eligibility_trace.update)
+        test.action_eligibility_trace.update = mock_update
+
+        episode = [
+            [(0, 0), 0, 1],  # state_key, action, reward
+            [(1, 0), 0, 2],  # state_key, action, reward
+        ]
+        discount = 0.5
+        lambda_value = 0.5
+
+        N = len(episode)
+        for i in range(N):
+            test.backward_td_lambda_learning_online(
+                episode[: i + 1],
+                discount=discount,
+                lambda_value=lambda_value,
+                final=i == N - 1,
+            )
+
+        assert test.action_eligibility_trace.data == {
+            (0, 0, 0): 0.25,
+            (1, 0, 0): 1,
+        }
+        assert test.action_value_store.data == {
+            (0, 0, 0): {"count": 2, "value": 1.125},
+            (1, 0, 0): {"count": 1, "value": 2},
+        }
