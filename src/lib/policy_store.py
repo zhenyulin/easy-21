@@ -129,14 +129,11 @@ class PolicyStore:
 
         reference: L5 RL by David Silver
         """
-        if final:
-            [state_key, action_index, reward] = sequence[-1]
-            action_key = (*state_key, action_index)
-            self.action_value_store.learn(action_key, reward)
+
         # unless for the final step, it needs a further step action value
         # to estimate the return of the remaining trajectory
         # update last step when a new step is added to form SARSA
-        elif len(sequence) > 1:
+        if len(sequence) > 1:
             [state_key, action_index, reward] = sequence[-2]
             [new_state_key, new_action_index, _] = sequence[-1]
             action_key = (*state_key, action_index)
@@ -144,6 +141,12 @@ class PolicyStore:
             estimated_remaining = self.action_value_store.get(new_action_key)
             estimated_return = reward + discount * estimated_remaining
             self.action_value_store.learn(action_key, estimated_return)
+        # if the step is final, an extra learning is done
+        # with the final reward, no td_return here
+        if final:
+            [state_key, action_index, reward] = sequence[-1]
+            action_key = (*state_key, action_index)
+            self.action_value_store.learn(action_key, reward)
 
     def forward_td_lambda_learning_offline(
         self,
@@ -169,6 +172,9 @@ class PolicyStore:
         - for a final step n, assign the remaining weight lambda_value ** n
         - equivalent to lambda_value ** n on reward_n
 
+        # if lambda_value = 0.1, weights = [0.9, 0.09, 0.009, ..., 0.0001]
+        # if lambda_value = 0.9, weights = [0.1, 0.09, 0.081, ..., 0.59]
+
         reference: L5 RL by David Silver
 
         Arguments:
@@ -183,16 +189,21 @@ class PolicyStore:
         for s in range(S):
             [state_key, action_index, _] = episode[s]
 
+            total_reward = 0
             lambda_return_s_n = 0
 
             # for the next [0, S-1-s+1) steps
             for n in range(0, S - s):
                 [state_key_s_n, action_index_s_n, reward_s_n] = episode[s + n]
 
-                # for a complete episode, reward is all guaranteed to be true smaple
-                lambda_return_s_n += (lambda_value ** n) * (discount ** n) * reward_s_n
+                # for a complete episode, reward is all guaranteed to be true sample
+                total_reward += discount ** n * reward_s_n
+                # initial weight assuming last step with final reward
+                # and accumulate it to the lambda_return
+                lambda_return_s_n += (lambda_value ** n) * total_reward
 
                 # if there's a next step, means s_n not final
+                # factor in the td_return for estimation
                 if n + 1 < S - s:
                     [
                         state_key_s_n_1,
@@ -203,9 +214,11 @@ class PolicyStore:
                         (*state_key_s_n_1, action_index_s_n_1)
                     )
                     td_return = (discount ** (n + 1)) * actoin_value_s_n_1
-
+                    # adjust the weight to (1-lambda_value)(lambda_value ** n)
+                    # for reward in case it is not final
+                    lambda_return_s_n -= (lambda_value ** (n + 1)) * total_reward
                     lambda_return_s_n += (
-                        (1 - lambda_value) * (lambda_value ** (n)) * td_return
+                        (1 - lambda_value) * (lambda_value ** n) * td_return
                     )
 
             self.action_value_store.learn(
@@ -244,20 +257,10 @@ class PolicyStore:
         Exact online learning algorithm is equivalent to Forward view
         in other situations.
         """
-        td_target = None
 
-        # eligibility_trace is updated relative to the td_target for learning
-        if final:
-            [state_key, action_index, reward] = sequence[-1]
-            state_action_key = (*state_key, action_index)
-
-            self.action_eligibility_trace.update(
-                state_action_key, discount=discount, lambda_value=lambda_value
-            )
-            td_target = reward
         # unless final step, it needs 2 steps to form SARSA
         # to have the estimated return of the remaining trajectory
-        elif len(sequence) > 1:
+        if len(sequence) > 1:
             [state_key, action_index, immediate_reward] = sequence[-2]
             state_action_key = (*state_key, action_index)
             [new_state_key, new_action_index, _] = sequence[-1]
@@ -269,21 +272,25 @@ class PolicyStore:
             td_return = self.action_value_store.get(new_state_action_key)
             td_target = immediate_reward + discount * td_return
 
-        if td_target is not None:
-            # update all past event for their contribution once
-            # avoid multiple updates if one event occured multiple times
-            for action_key in self.action_eligibility_trace.keys():
-                eligibility = self.action_eligibility_trace.get(action_key)
-                # here the count is inflated excessively
-                # but it is ok as long as we get a diminishing step_size
-                self.action_value_store.learn(
-                    action_key,
-                    td_target,
-                    step_size=lambda count: eligibility / count,
-                )
+            self.action_value_store.learn_with_eligibility_trace(
+                self.action_eligibility_trace,
+                td_target,
+            )
 
+        # eligibility_trace is updated relative to the td_target for learning
         if final:
-            self.action_eligibility_trace.reset()
+            [state_key, action_index, reward] = sequence[-1]
+            state_action_key = (*state_key, action_index)
+
+            self.action_eligibility_trace.update(
+                state_action_key, discount=discount, lambda_value=lambda_value
+            )
+            td_target = reward
+
+            self.action_value_store.learn_with_eligibility_trace(
+                self.action_eligibility_trace,
+                td_target,
+            )
 
     #
     # Helper Functions

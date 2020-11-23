@@ -78,6 +78,23 @@ class ValueMap(ValueStore):
         d["count"] += 1
         d["value"] += step_size(d["count"]) * (sample - d["value"])
 
+    def learn_with_eligibility_trace(
+        self,
+        eligibility_trace,
+        sample,
+    ):
+        for key in eligibility_trace.keys():
+            eligibility = eligibility_trace.get(key)
+            # here the count is inflated excessively
+            # but it is ok as long as we get a diminishing step_size
+            # also it can be generally regarded as
+            # more smaller samples are here
+            self.learn(
+                key,
+                sample,
+                step_size=lambda count: eligibility / count,
+            )
+
     def backup(self):
         self.cache = deepcopy(self.data)
 
