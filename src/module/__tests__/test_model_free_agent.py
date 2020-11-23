@@ -1,8 +1,7 @@
-import pytest
-
 from unittest import mock
-from src.lib.policy_store import PolicyStore
 from copy import deepcopy
+
+from src.module.model_free_agent import ModelFreeAgent
 
 
 class CopyMock(mock.MagicMock):
@@ -16,10 +15,9 @@ ACTIONS = ["a", "b", "c"]
 
 
 def test_init():
-    test = PolicyStore("test", ACTIONS)
+    test = ModelFreeAgent("test", ACTIONS)
 
     assert test.name == "test"
-    assert test.state_value_store.name == "test_state_values"
     assert test.action_value_store.name == "test_action_values"
     assert test.greedy_state_value_store.name == "test_greedy_state_values"
     assert test.greedy_policy_action_store.name == "test_greedy_policy_actions"
@@ -29,7 +27,7 @@ def test_init():
 
 
 def test_e_greedy_policy_return_action_index():
-    test = PolicyStore("test", ACTIONS)
+    test = ModelFreeAgent("test", ACTIONS)
     state_key = (1, 1)
     test.action_value_store.set((1, 1, 0), 1)
     test.action_value_store.set((1, 1, 1), 0)
@@ -51,7 +49,7 @@ def test_e_greedy_policy_return_action_index():
 
 class TestMonteCarloLearning:
     def test_learn_each_step_with_correct_total_return(self):
-        test = PolicyStore("test", ACTIONS)
+        test = ModelFreeAgent("test", ACTIONS)
 
         mock_learn = CopyMock()
         test.action_value_store.learn = mock_learn
@@ -73,7 +71,7 @@ class TestMonteCarloLearning:
         assert mock_learn.call_args_list == expected
 
     def test_learn_empty_sequence(self):
-        test = PolicyStore("test", ACTIONS)
+        test = ModelFreeAgent("test", ACTIONS)
 
         mock_learn = CopyMock()
         test.action_value_store.learn = mock_learn
@@ -86,7 +84,7 @@ class TestMonteCarloLearning:
         assert mock_learn.call_args_list == expected
 
     def test_learn_single_step_sequence(self):
-        test = PolicyStore("test", ACTIONS)
+        test = ModelFreeAgent("test", ACTIONS)
 
         mock_learn = CopyMock()
         test.action_value_store.learn = mock_learn
@@ -103,7 +101,7 @@ class TestMonteCarloLearning:
 
 class TestTemporalDifferenceLearning:
     def test_learn_each_step_with_correct_return(self):
-        test = PolicyStore("test", ACTIONS)
+        test = ModelFreeAgent("test", ACTIONS)
 
         mock_learn = CopyMock()
         test.action_value_store.learn = mock_learn
@@ -136,7 +134,7 @@ class TestTemporalDifferenceLearning:
         assert mock_learn.call_args_list == expected
 
     def test_empty_sequence(self):
-        test = PolicyStore("test", ACTIONS)
+        test = ModelFreeAgent("test", ACTIONS)
 
         mock_learn = CopyMock()
         test.action_value_store.learn = mock_learn
@@ -154,7 +152,7 @@ class TestTemporalDifferenceLearning:
         assert mock_learn.call_args_list == expected
 
     def test_single_step_episode(self):
-        test = PolicyStore("test", ACTIONS)
+        test = ModelFreeAgent("test", ACTIONS)
 
         mock_learn = CopyMock()
         test.action_value_store.learn = mock_learn
@@ -178,7 +176,7 @@ class TestTemporalDifferenceLearning:
 
 class TestForwardTemporalDifferenceLambdaLearning:
     def test_learn_each_step_with_correct_return(self):
-        test = PolicyStore("test", ACTIONS)
+        test = ModelFreeAgent("test", ACTIONS)
 
         mock_learn = CopyMock(wraps=test.action_value_store.learn)
         test.action_value_store.learn = mock_learn
@@ -232,7 +230,7 @@ class TestForwardTemporalDifferenceLambdaLearning:
         assert mock_learn.call_args_list == expected
 
     def test_empty_sequence(self):
-        test = PolicyStore("test", ACTIONS)
+        test = ModelFreeAgent("test", ACTIONS)
 
         mock_learn = CopyMock()
         test.action_value_store.learn = mock_learn
@@ -251,7 +249,7 @@ class TestForwardTemporalDifferenceLambdaLearning:
         assert mock_learn.call_args_list == expected
 
     def test_single_step_episode(self):
-        test = PolicyStore("test", ACTIONS)
+        test = ModelFreeAgent("test", ACTIONS)
 
         mock_learn = CopyMock()
         test.action_value_store.learn = mock_learn
@@ -276,7 +274,7 @@ class TestForwardTemporalDifferenceLambdaLearning:
 
 class TestBackwardTemporalDifferenceLambdaLearning:
     def test_learn_each_step_with_correct_return(self):
-        test = PolicyStore("test", ACTIONS)
+        test = ModelFreeAgent("test", ACTIONS)
 
         mock_learn = CopyMock(wraps=test.action_value_store.learn)
         test.action_value_store.learn = mock_learn
@@ -346,7 +344,7 @@ class TestBackwardTemporalDifferenceLambdaLearning:
         assert mock_reset.called_once()
 
     def test_empty_sequence(self):
-        test = PolicyStore("test", ACTIONS)
+        test = ModelFreeAgent("test", ACTIONS)
 
         mock_learn = CopyMock()
         test.action_value_store.learn = mock_learn
@@ -364,7 +362,7 @@ class TestBackwardTemporalDifferenceLambdaLearning:
         assert mock_learn.call_args_list == expected
 
     def test_single_step_episode(self):
-        test = PolicyStore("test", ACTIONS)
+        test = ModelFreeAgent("test", ACTIONS)
 
         mock_learn = CopyMock(wraps=test.action_value_store.learn)
         test.action_value_store.learn = mock_learn
@@ -393,7 +391,7 @@ class TestBackwardTemporalDifferenceLambdaLearning:
         }
 
     def test_two_step_episode_for_eligibility(self):
-        test = PolicyStore("test", ACTIONS)
+        test = ModelFreeAgent("test", ACTIONS)
 
         mock_learn = CopyMock(wraps=test.action_value_store.learn)
         test.action_value_store.learn = mock_learn

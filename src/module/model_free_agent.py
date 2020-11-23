@@ -1,19 +1,22 @@
 from copy import deepcopy
 
-from .value_map import ValueMap
-from .eligibility_trace import EligibilityTrace
-from .policy import e_greedy_policy, greedy_policy
+from src.lib.value_map import ValueMap
+from src.lib.eligibility_trace import EligibilityTrace
+from src.lib.policy import e_greedy_policy, greedy_policy
 
 
-class PolicyStore:
-    """PolicyStore
+class ModelFreeAgent:
+    """ModelFreeAgent
 
-    A store combining related value maps
-    needed for Model-Free Control
+    A model-free on-policy learning agent
+    combining related
+    - value stores
+    - control policy
+    - learning methods
 
     glossy:
     - learning = 'incremental update/evaluation'
-    - policy iteration/improvement
+    - policy iteration/improvement = take 'greedy values'
     - control = value learning & policy iteration
     """
 
@@ -27,19 +30,19 @@ class PolicyStore:
 
         Convergence Order:
         greedy_policy_actions(might stuck)
-        > greedy_state_values(true)
-        > action_values(true)
-        > state_values(depends on e_greedy_policy)
+        > greedy_state_values(true value with exploration)
+        > action_values(true value, sufficient sampling of all trajectories)
 
         """
         self.name = name
 
         self.ACTIONS = ACTIONS
 
-        self.state_value_store = ValueMap(f"{name}_state_values")
         self.action_value_store = ValueMap(f"{name}_action_values")
         self.greedy_state_value_store = ValueMap(f"{name}_greedy_state_values")
         self.greedy_policy_action_store = ValueMap(f"{name}_greedy_policy_actions")
+
+        # for learning curve metrics when the optimal is known
         self.optimal_state_value_store = ValueMap(f"{name}_optimal_state_values")
 
         self.action_eligibility_trace = EligibilityTrace()

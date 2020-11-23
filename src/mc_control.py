@@ -1,14 +1,18 @@
 # %%
+import sys
+sys.path.append("../")
+
+# %%
 from tqdm import trange
 
 from game import playout, ACTIONS
-from lib.policy_store import PolicyStore
+from module.model_free_agent import ModelFreeAgent
 from util.plot import plot_2d_value_map, plot_line
 
 EPISODES = int(1e5)
 BATCH = 100
 
-PLAYER = PolicyStore("player", ACTIONS)
+PLAYER = ModelFreeAgent("player", ACTIONS)
 
 
 def train():

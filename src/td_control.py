@@ -1,15 +1,19 @@
 # %%
+import sys
+sys.path.append("../")
+
+# %%
 import numpy as np
 
 from tqdm import tqdm
 
 from game import playout, ACTIONS
-from lib.policy_store import PolicyStore
+from module.model_free_agent import ModelFreeAgent
 from util.plot import plot_line
 
-EPISODES = int(1e3)
+EPISODES = int(1e4)
 
-PLAYER = PolicyStore("player", ACTIONS)
+PLAYER = ModelFreeAgent("player", ACTIONS)
 PLAYER.load_optimal_state_values()
 
 # %%
