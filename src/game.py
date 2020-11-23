@@ -55,15 +55,21 @@ def in_key(state):
     return (state["dealer"], state["player"])
 
 
-def dummy_dealer_stick_policy(state_key):
+def dummy_dealer_stick_policy(state_key, return_index=False):
     # dealder always stick for any sum of 17 or greater
     (dealer, _) = state_key
-    return dealer >= 17
+    stick = dealer >= 17
+    if return_index:
+        return ACTIONS.index("stick") if stick else ACTIONS.index("hit")
+    return stick
 
 
-def dummy_player_stick_policy(state_key):
+def dummy_player_stick_policy(state_key, return_index=False):
     (_, player) = state_key
-    return player >= 17
+    stick = player >= 17
+    if return_index:
+        return ACTIONS.index("stick") if stick else ACTIONS.index("hit")
+    return stick
 
 
 def game(
@@ -91,14 +97,18 @@ def game(
         dealer_stick = dealer_policy(in_key(state))
         state = step(state, player_stick, dealer_stick)
 
+    if log:
+        print(state)
     return state
 
 
-# TODO: test
-# TODO: refactor to work with online sarsa better
 def playout(
-    player_policy=dummy_player_stick_policy,
-    dealer_policy=dummy_dealer_stick_policy,
+    player_policy=lambda state_key: dummy_player_stick_policy(
+        state_key, return_index=True
+    ),
+    dealer_policy=lambda state_key: dummy_dealer_stick_policy(
+        state_key, return_index=True
+    ),
     player_online_learning=lambda x, final=False: x,
     player_offline_learning=lambda x: x,
     dealer_online_learning=lambda x, final=False: x,
@@ -110,18 +120,18 @@ def playout(
     state = init()
 
     while state["reward"] is None:
-        player_action_index = player_policy(in_key(state))
-
-        immediate_reward = 0
-        time_step = [in_key(state), player_action_index, immediate_reward]
-        player_sequence.append(time_step)
-
         # online algorithm typically learn a SARSA sequence
         # so unless final is specified, the last reward is
         # not taken into account
         # final is specified when the final reward is confirmed
         # at the end of game
         player_online_learning(player_sequence)
+
+        player_action_index = player_policy(in_key(state))
+
+        immediate_reward = 0
+        time_step = [in_key(state), player_action_index, immediate_reward]
+        player_sequence.append(time_step)
 
         player_stick = player_action_index == ACTIONS.index("stick")
 
@@ -131,23 +141,21 @@ def playout(
         state = step(state, player_stick)
 
     while state["reward"] is None:
+        # see player part
+        dealer_online_learning(dealer_sequence)
 
         player_stick = True
-        dealer_stick = dealer_policy(in_key(state))
-
-        dealer_action_index = ACTIONS.index("stick" if dealer_stick else "hit")
+        dealer_action_index = dealer_policy(in_key(state))
 
         immediate_reward = 0
         time_step = [in_key(state), dealer_action_index, immediate_reward]
         dealer_sequence.append(time_step)
 
-        # see player part
-        dealer_online_learning(dealer_sequence)
+        dealer_stick = dealer_action_index == ACTIONS.index("stick")
 
         state = step(state, player_stick, dealer_stick)
 
     reward = state["reward"]
-
     # update the last time step reward to the final reward
     player_sequence[-1][-1] = reward
     player_online_learning(player_sequence, final=True)
@@ -159,4 +167,4 @@ def playout(
         dealer_online_learning(dealer_sequence, final=True)
         dealer_offline_learning(dealer_sequence)
 
-    return player_sequence
+    return player_sequence, dealer_sequence
