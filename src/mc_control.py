@@ -33,8 +33,7 @@ def train(save_after_converge):
                 player_offline_learning=PLAYER.monte_carlo_learning_offline,
             )
 
-        PLAYER.action_value_store.record(["diff"])
-        if PLAYER.action_value_store.converged("diff", 0.001):
+        if PLAYER.action_value_store.record_and_check_convergence("diff"):
             if save_after_converge:
                 PLAYER.set_greedy_value_stores()
                 PLAYER.save_greedy_state_values_as_optimal()

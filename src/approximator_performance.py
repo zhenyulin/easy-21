@@ -13,7 +13,7 @@ from module.model_free_agent import ModelFreeAgent
 from game import playout, ACTIONS, PLAYER_STATES
 from feature_function import key_to_features
 
-EPISODES = int(1e3)
+EPISODES = int(1e4)
 BATCH = 100
 
 PLAYER = ModelFreeAgent(
@@ -40,8 +40,7 @@ def train():
 
         PLAYER.greedy_state_value_store.record(["learning_progress"])
 
-        PLAYER.action_value_store.record(["diff"])
-        if PLAYER.action_value_store.converged("diff", 0.001):
+        if PLAYER.action_value_store.record_and_check_convergence("diff"):
             break
 
     PLAYER.set_greedy_value_stores()

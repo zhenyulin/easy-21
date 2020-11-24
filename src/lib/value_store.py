@@ -24,7 +24,7 @@ class ValueStore:
         else:
             self.metrics_history[metrics_name] = []
 
-    def record(self, metrics_names, value=None, log=True):
+    def record(self, metrics_names, log=True):
         for metrics_name in metrics_names:
 
             metrics_method = getattr(self, metrics_name)
@@ -55,6 +55,10 @@ class ValueStore:
             return True
         else:
             return False
+
+    def record_and_check_convergence(self, metrics_name, log_record=True):
+        self.record([metrics_name], log=log_record)
+        return self.converged(metrics_name)
 
     def plot_metrics_history(
         self,
