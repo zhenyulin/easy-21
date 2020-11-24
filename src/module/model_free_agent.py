@@ -171,8 +171,8 @@ class ModelFreeAgent:
         self,
         episode,
         discount=1,
-        lambda_value=1,
-        q_learning=False,
+        lambda_value=0,
+        off_policy=False,
     ):
         """forward_td_lambda_learning
 
@@ -237,7 +237,7 @@ class ModelFreeAgent:
                         greedy_policy(
                             state_key_s_n_1, self.ACTIONS, self.action_value_store
                         )[1]
-                        if q_learning
+                        if off_policy
                         else self.action_value_store.get(
                             (*state_key_s_n_1, action_index_s_n_1)
                         )
@@ -262,7 +262,7 @@ class ModelFreeAgent:
         discount=1,
         lambda_value=1,
         final=False,
-        q_learning=False,
+        off_policy=False,
     ):
         """backward_sarsa_lambda_learning
 
@@ -302,7 +302,7 @@ class ModelFreeAgent:
             )
             possible_remaining_value = (
                 greedy_policy(new_state_key, self.ACTIONS, self.action_value_store)[1]
-                if q_learning
+                if off_policy
                 else self.action_value_store.get(new_state_action_key)
             )
             td_target = immediate_reward + discount * possible_remaining_value

@@ -24,10 +24,10 @@ PLAYER.target_state_value_store.learning_progress = (
 
 def test_lambda_value_performance():
 
-    q_learning_options = [True, False]
+    off_policy_options = [True, False]
 
-    for q_learning in tqdm(q_learning_options):
-        print("q_learning: ", q_learning)
+    for off_policy in tqdm(off_policy_options):
+        print("off_policy: ", off_policy)
 
         PLAYER.action_value_store.reset()
 
@@ -40,7 +40,7 @@ def test_lambda_value_performance():
                 player_offline_learning=lambda episode: PLAYER.forward_td_lambda_learning_offline(
                     episode,
                     lambda_value=0,
-                    q_learning=q_learning,
+                    off_policy=off_policy,
                 ),
             )
 
@@ -52,7 +52,7 @@ def test_lambda_value_performance():
 
         PLAYER.target_state_value_store.plot_metrics_history(
             "learning_progress",
-            title=f"learning progress at {EPISODES:.0e} episodes - q_learning: {q_learning}",
+            title=f"learning progress at {EPISODES:.0e} episodes - off_policy: {off_policy}",
         )
         PLAYER.target_state_value_store.reset_metrics_history("learning_progress")
 
