@@ -14,16 +14,16 @@ sys.path.append("../")
 import numpy as np
 from tqdm import tqdm
 
-from game import playout, ACTIONS
 from module.model_free_agent import ModelFreeAgent
-from util.plot import plot_line
+
+from game import playout, ACTIONS
 
 EPISODES = int(1e5)
 
 PLAYER = ModelFreeAgent("player", ACTIONS)
 PLAYER.load_optimal_state_values()
 
-PLAYER.greedy_state_value_store.learning_progress = (
+PLAYER.target_state_value_store.learning_progress = (
     PLAYER.compare_learning_progress_with_optimal
 )
 
@@ -45,9 +45,9 @@ def test_exploration_rate():
                 player_offline_learning=PLAYER.monte_carlo_learning_offline,
             )
 
-        PLAYER.greedy_state_value_store.record(["learning_progress"])
+        PLAYER.target_state_value_store.record(["learning_progress"])
 
-    PLAYER.greedy_state_value_store.plot_metrics_history(
+    PLAYER.target_state_value_store.plot_metrics_history(
         "learning_progress",
         x=exploration_rate_range,
     )

@@ -23,20 +23,20 @@ class ModelFreeAgent:
         self,
         name,
         ACTIONS,
-        STATES=None,
         STATE_LABELS=None,
+        STATES=None,
         approximator_function=None,
     ):
         """
         ACTIONS:
         the order of the actions should not be relavent
-        though greedy_policy_actions init with index 0
+        though target_policy_actions init with index 0
         the true optimal policy should be the same
         right convergence condition and exploration rate are important
 
         Convergence Order:
-        greedy_policy_actions(might stuck)
-        > greedy_state_values(true value with exploration)
+        target_policy_actions(might stuck)
+        > target_state_values(true value with exploration)
         > action_values(true value, sufficient sampling of all trajectories)
 
         """
@@ -57,8 +57,8 @@ class ModelFreeAgent:
             )
         )
 
-        self.greedy_state_value_store = ValueMap(f"{name}_greedy_state_values")
-        self.greedy_policy_action_store = ValueMap(f"{name}_greedy_policy_actions")
+        self.target_state_value_store = ValueMap(f"{name}_target_state_values")
+        self.target_policy_action_store = ValueMap(f"{name}_target_policy_actions")
 
         # for learning curve metrics when the optimal is known
         self.optimal_state_value_store = ValueMap(f"{name}_optimal_state_values")
@@ -323,32 +323,32 @@ class ModelFreeAgent:
         state_keys = list(set([key[:-1] for key in state_action_keys]))
         return state_keys
 
-    def set_greedy_value_stores(self):
+    def set_target_value_stores(self):
         for state_key in self.get_state_keys():
-            greedy_action_index, greedy_action_value = greedy_policy(
+            target_action_index, target_action_value = greedy_policy(
                 state_key, self.ACTIONS, self.action_value_store
             )
-            self.greedy_state_value_store.set(state_key, greedy_action_value)
-            self.greedy_policy_action_store.set(state_key, greedy_action_index)
+            self.target_policy_action_store.set(state_key, target_action_index)
+            self.target_state_value_store.set(state_key, target_action_value)
 
-    def plot_2d_greedy_value_stores(self):
+    def plot_2d_target_value_stores(self):
         [x_label, y_label] = (
             self.STATE_LABELS if self.STATE_LABELS is not None else [None, None]
         )
-        self.greedy_state_value_store.plot_2d_value(x_label, y_label)
-        self.greedy_policy_action_store.plot_2d_value(
+        self.target_state_value_store.plot_2d_value(x_label, y_label)
+        self.target_policy_action_store.plot_2d_value(
             x_label, y_label, z_label="Action Index"
         )
 
     def compare_learning_progress_with_optimal(self):
-        self.set_greedy_value_stores()
-        return self.greedy_state_value_store.compare(self.optimal_state_value_store)
+        self.set_target_value_stores()
+        return self.target_state_value_store.compare(self.optimal_state_value_store)
 
     #
     # Helper Functions - Optimal I/O & Compare
     #
-    def save_greedy_state_values_as_optimal(self, path=None):
-        self.greedy_state_value_store.save(
+    def save_target_state_values_as_optimal(self, path=None):
+        self.target_state_value_store.save(
             self.default_file_path_for_optimal_state_values if path is None else path
         )
 

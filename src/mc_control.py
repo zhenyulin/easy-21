@@ -18,7 +18,7 @@ from module.model_free_agent import ModelFreeAgent
 EPISODES = int(1e5)
 BATCH = 100
 
-PLAYER = ModelFreeAgent("player", ACTIONS, STATE_LABELS=STATE_LABELS)
+PLAYER = ModelFreeAgent("player", ACTIONS, STATE_LABELS)
 
 
 def train(save_after_converge):
@@ -35,20 +35,20 @@ def train(save_after_converge):
 
         if PLAYER.action_value_store.record_and_check_convergence("diff"):
             if save_after_converge:
-                PLAYER.set_greedy_value_stores()
-                PLAYER.save_greedy_state_values_as_optimal()
+                PLAYER.set_target_value_stores()
+                PLAYER.save_target_state_values_as_optimal()
                 PLAYER.action_value_store.save(
                     "../output/player_true_action_values.json"
                 )
             break
 
-    PLAYER.set_greedy_value_stores()
-    PLAYER.plot_2d_greedy_value_stores()
+    PLAYER.set_target_value_stores()
+    PLAYER.plot_2d_target_value_stores()
 
     PLAYER.action_value_store.plot_metrics_history("diff")
 
 
 try:
-    train(True)
+    train(False)
 except Exception as e:
     print(e)

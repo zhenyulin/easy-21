@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 from module.model_free_agent import ModelFreeAgent
 
-from game import playout, ACTIONS, PLAYER_STATES
+from game import playout, ACTIONS, STATE_LABELS, PLAYER_STATES
 from feature_function import key_to_features
 
 EPISODES = int(1e4)
@@ -26,15 +26,16 @@ EPISODES = int(1e4)
 PLAYER = ModelFreeAgent(
     "player",
     ACTIONS,
+    STATE_LABELS,
     PLAYER_STATES,
     approximator_function=key_to_features,
 )
 PLAYER.load_optimal_state_values()
 
-PLAYER.greedy_state_value_store.learning_progress = (
+PLAYER.target_state_value_store.learning_progress = (
     PLAYER.compare_learning_progress_with_optimal
 )
-PLAYER.greedy_state_value_store.lambda_value_performance = (
+PLAYER.target_state_value_store.lambda_value_performance = (
     PLAYER.compare_learning_progress_with_optimal
 )
 
@@ -57,21 +58,21 @@ def test_lambda_value_performance():
             )
 
             if lambda_value in [0.0, 1.0] and _ % 10 == 0:
-                PLAYER.greedy_state_value_store.record(
+                PLAYER.target_state_value_store.record(
                     ["learning_progress"],
                     log=False,
                 )
 
         if lambda_value in [0.0, 1.0]:
-            PLAYER.greedy_state_value_store.plot_metrics_history(
+            PLAYER.target_state_value_store.plot_metrics_history(
                 "learning_progress",
                 title=f"learning progress at {EPISODES:.0e} episodes - lambda_value: {lambda_value}",
             )
-            PLAYER.greedy_state_value_store.reset_metrics_history("learning_progress")
+            PLAYER.target_state_value_store.reset_metrics_history("learning_progress")
 
-        PLAYER.greedy_state_value_store.record(["lambda_value_performance"])
+        PLAYER.target_state_value_store.record(["lambda_value_performance"])
 
-    PLAYER.greedy_state_value_store.plot_metrics_history(
+    PLAYER.target_state_value_store.plot_metrics_history(
         "lambda_value_performance", x=lambda_value_range
     )
 
