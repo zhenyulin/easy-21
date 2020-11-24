@@ -12,9 +12,9 @@ from tqdm import tqdm
 from module.model_free_agent import ModelFreeAgent
 
 from game import playout, ACTIONS, STATE_LABELS, PLAYER_STATES
-from feature_function import key_to_features
+from feature_function import table_lookup
 
-EPISODES = int(1e4)
+EPISODES = int(1e5)
 EPOCH = 10
 
 PLAYER = ModelFreeAgent(
@@ -22,19 +22,19 @@ PLAYER = ModelFreeAgent(
     ACTIONS,
     STATE_LABELS,
     PLAYER_STATES,
-    approximator_function=key_to_features,
+    approximator_function=table_lookup,
 )
 PLAYER.load_optimal_state_values()
 
 PLAYER.target_state_value_store.learning_progress = (
     PLAYER.compare_learning_progress_with_optimal
 )
-PLAYER.target_state_value_store.off_policy_performance = (
+PLAYER.target_state_value_store.batch_size_performance = (
     PLAYER.compare_learning_progress_with_optimal
 )
 
 
-def test_lambda_value_performance():
+def test():
 
     experiences = []
     for _ in range(EPISODES):
@@ -44,37 +44,41 @@ def test_lambda_value_performance():
     #
     # experience replay with TD(lambda) On-Policy
     #
-    off_policy_options = [True, False]
+    batch_size_options = [10, 50, 100]
 
-    for off_policy in tqdm(off_policy_options):
-        print("off_policy: ", off_policy)
+    for batch_size in tqdm(batch_size_options):
+        print("batch_size: ", batch_size)
 
         PLAYER.action_value_store.reset()
+        BATCH = len(experiences) // batch_size
 
         for _ in range(EPOCH):
-            for episode in experiences:
-                PLAYER.forward_td_lambda_learning_offline(
-                    episode,
+            for batch_n in range(BATCH):
+                batch_episodes = experiences[
+                    batch_n * batch_size : (batch_n + 1) * batch_size
+                ]
+                PLAYER.forward_td_lambda_learning_offline_batch(
+                    batch_episodes,
                     lambda_value=0,
-                    off_policy=off_policy,
+                    off_policy=True,
                 )
 
             PLAYER.target_state_value_store.record(["learning_progress"])
 
         PLAYER.target_state_value_store.plot_metrics_history(
             "learning_progress",
-            title=f"learning progress - off_policy: {off_policy}",
+            title=f"learning progress - batch_size: {batch_size}",
         )
         PLAYER.target_state_value_store.reset_metrics_history("learning_progress")
 
-        PLAYER.target_state_value_store.record(["off_policy_performance"])
+        PLAYER.target_state_value_store.record(["batch_size_performance"])
 
     PLAYER.target_state_value_store.plot_metrics_history(
-        "off_policy_performance", x=off_policy_options
+        "batch_size_performance", x=batch_size_options
     )
 
 
 try:
-    test_lambda_value_performance()
+    test()
 except Exception as e:
     print(e)

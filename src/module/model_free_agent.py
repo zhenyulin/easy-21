@@ -173,6 +173,7 @@ class ModelFreeAgent:
         discount=1,
         lambda_value=0,
         off_policy=False,
+        defer_update=False,
     ):
         """forward_td_lambda_learning
 
@@ -203,13 +204,16 @@ class ModelFreeAgent:
           discount {number} -- discount factor for future rewards (default: {1})
           lambda_value {number} -- default to monte carlo learning (default: {1})
         """
+        targets = []
+
         S = len(episode)
 
         for s in range(S):
             [state_key, action_index, _] = episode[s]
+            state_action_key = (*state_key, action_index)
 
             total_reward = 0
-            lambda_return_s_n = 0
+            lambda_return = 0
 
             # for the next [0, S-1-s+1) steps
             for n in range(0, S - s):
@@ -219,7 +223,7 @@ class ModelFreeAgent:
                 total_reward += discount ** n * reward_s_n
                 # initial weight assuming last step with final reward
                 # and accumulate it to the lambda_return
-                lambda_return_s_n += (lambda_value ** n) * total_reward
+                lambda_return += (lambda_value ** n) * total_reward
 
                 # if there's a next step, means s_n not final
                 # factor in the td_return for estimation
@@ -244,18 +248,42 @@ class ModelFreeAgent:
                     )
                     td_return = (discount ** (n + 1)) * possible_remaining_value
 
-                    lambda_return_s_n -= (lambda_value ** (n + 1)) * total_reward
-                    lambda_return_s_n += (
+                    lambda_return -= (lambda_value ** (n + 1)) * total_reward
+                    lambda_return += (
                         (1 - lambda_value) * (lambda_value ** n) * td_return
                     )
 
-            self.action_value_store.learn(
-                (*state_key, action_index),
-                lambda_return_s_n,
+            targets.append([state_action_key, lambda_return])
+
+            if not defer_update:
+                self.action_value_store.learn(state_action_key, lambda_return)
+
+        return targets
+
+    def forward_td_lambda_learning_offline_batch(
+        self,
+        episode_batch,
+        discount=1,
+        lambda_value=0,
+        off_policy=False,
+    ):
+        batch_targets = []
+        for episode in episode_batch:
+            targets = self.forward_td_lambda_learning_offline(
+                episode,
+                discount=discount,
+                lambda_value=lambda_value,
+                off_policy=off_policy,
+                defer_update=True,
             )
+            batch_targets.extend(targets)
+
+        for (state_action_key, lambda_return) in batch_targets:
+            self.action_value_store.learn(state_action_key, lambda_return)
 
     # TODO: make backward_td_lambda(0) equivalent to td_learning
     # TODO: make step_size more testable
+    # TODO: support offline, accumulate the td_target in eligibility_trace
     def backward_td_lambda_learning_online(
         self,
         sequence,
