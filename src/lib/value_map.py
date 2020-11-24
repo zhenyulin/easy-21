@@ -1,4 +1,6 @@
 import json
+import numpy as np
+import matplotlib.pyplot as plt
 
 from copy import deepcopy
 from math import sqrt
@@ -60,11 +62,6 @@ class ValueMap(ValueStore):
         self.data[key]["count"] = 0
         self.data[key]["value"] = value
 
-    def list_set(self, key_list, value_list={}, value_func=None):
-        for key in key_list:
-            value = value_list[key] if value_func is None else value_func(key)
-            self.set(key, value)
-
     def learn(
         self,
         key,
@@ -105,18 +102,19 @@ class ValueMap(ValueStore):
     #
     # metrics functions
     #
-    def mean(self):
-        values = [self.data[key]["value"] for key in self.data.keys()]
-        return sum(values) / len(values)
-
     def diff(self):
         sq_error = 0
+        values = [d["value"] for d in self.data.values()]
+        value_range = max(values) - min(values)
+
         for key in self.data.keys():
             old_value = self.cache[key]["value"] if key in self.cache.keys() else 0
-            error = self.data[key]["value"] - old_value
+            new_value = self.data[key]["value"]
+
+            error = new_value - old_value
             sq_error += error ** 2
 
-        return sqrt(sq_error / len(self.data.keys()))
+        return sqrt(sq_error / len(self.data.keys())) / value_range
 
     def compare(self, other_value_map):
         sq_error = 0
@@ -126,6 +124,43 @@ class ValueMap(ValueStore):
             sq_error += error ** 2
 
         return sqrt(sq_error / len(self.data.keys()))
+
+    #
+    # plot functions
+    #
+    def plot_2d_value(
+        self,
+        x_label,
+        y_label,
+        z_label="Value",
+        title=None,
+        figsize=(20, 20),
+    ):
+        fig = plt.figure(figsize=figsize)
+        ax = fig.add_subplot(111, projection="3d")
+
+        keys = list(self.keys())
+
+        if len(keys[0]) > 2:
+            raise Exception("not able to plot value_map with keys >2 dimensions")
+
+        x = sorted(list(set([a for (a, b) in keys])))
+        y = sorted(list(set([b for (a, b) in keys])))
+
+        X, Y = np.meshgrid(x, y)
+
+        Z = np.array([[self.get((a, b)) for a in x] for b in y])
+
+        plt.xticks(x)
+        plt.yticks(y)
+
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
+        ax.set_zlabel(z_label)
+
+        plt.title(self.name if title is None else title)
+
+        ax.plot_surface(X, Y, Z)
 
     #
     # file I/O functions

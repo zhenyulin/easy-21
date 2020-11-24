@@ -41,8 +41,7 @@ class ValueStore:
             if metrics_name == "diff":
                 self.backup()
 
-    # TODO: update the condition to be relative to max/min of data/weights
-    def converged(self, metrics_name, threshold, log=True):
+    def converged(self, metrics_name, threshold=0.001, log=True):
         last_3 = self.metrics_history[metrics_name][-4:-1]
 
         if len(last_3) < 3:

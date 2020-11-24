@@ -82,7 +82,10 @@ class ValueApproximator(ValueStore):
     def diff(self):
         if self.cache.size == 0:
             self.cache = np.zeros_like(self.weights)
-        return (np.square(self.weights - self.cache)).mean(axis=0)
+        mse = (np.square(self.weights - self.cache)).mean(axis=0)
+        rmse = np.sqrt(mse)
+        value_range = np.amax(self.weights) - np.amin(self.weights)
+        return rmse / value_range
 
     def compare(self, value_map):
         sq_error = 0
