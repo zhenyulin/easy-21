@@ -158,7 +158,7 @@ class TestDiff:
         value_approximator.weights = np.array([1.0, 1.0, 1.0])
         value_approximator.backup()
         value_approximator.weights = np.array([1.2, 0.8, 1.2])
-        assert abs(value_approximator.diff() - 0.04) < 1e-5
+        assert abs(value_approximator.diff() - 0.2 / 1.2) < 1e-5
 
 
 def test_compare():
@@ -177,5 +177,5 @@ def test_record():
     value_approximator.backup()
     value_approximator.weights = np.array([1.2, 0.8, 1.2])
     value_approximator.record(["diff"], log=False)
-    assert np.allclose(value_approximator.metrics_history["diff"], [0.04])
+    assert np.allclose(value_approximator.metrics_history["diff"], [0.2 / 1.2])
     assert np.allclose(value_approximator.weights, value_approximator.cache)

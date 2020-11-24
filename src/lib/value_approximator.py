@@ -84,7 +84,7 @@ class ValueApproximator(ValueStore):
             self.cache = np.zeros_like(self.weights)
         mse = (np.square(self.weights - self.cache)).mean(axis=0)
         rmse = np.sqrt(mse)
-        value_range = np.amax(self.weights) - np.amin(self.weights)
+        value_range = np.amax(self.weights) - min(np.amin(self.weights), 0)
         return rmse / value_range
 
     def compare(self, value_map):

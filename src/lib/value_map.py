@@ -105,7 +105,7 @@ class ValueMap(ValueStore):
     def diff(self):
         sq_error = 0
         values = [d["value"] for d in self.data.values()]
-        value_range = max(values) - min(values)
+        value_range = max(values) - min([*values, 0])
 
         for key in self.data.keys():
             old_value = self.cache[key]["value"] if key in self.cache.keys() else 0
