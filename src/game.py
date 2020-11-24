@@ -3,7 +3,8 @@ import math
 
 from random import random
 
-ACTIONS = ["stick", "hit"]
+ACTIONS = ["hit", "stick"]
+STATE_LABELS = ["dealer", "player"]
 
 PLAYER_STATES = [(dealer, player) for dealer in range(1, 10) for player in range(1, 22)]
 
