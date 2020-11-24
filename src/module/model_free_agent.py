@@ -172,6 +172,7 @@ class ModelFreeAgent:
         episode,
         discount=1,
         lambda_value=1,
+        q_learning=False,
     ):
         """forward_td_lambda_learning
 
@@ -231,10 +232,17 @@ class ModelFreeAgent:
                         action_index_s_n_1,
                         reward_s_n_1,
                     ] = episode[s + n + 1]
-                    actoin_value_s_n_1 = self.action_value_store.get(
-                        (*state_key_s_n_1, action_index_s_n_1)
+
+                    possible_remaining_value = (
+                        greedy_policy(
+                            state_key_s_n_1, self.ACTIONS, self.action_value_store
+                        )[1]
+                        if q_learning
+                        else self.action_value_store.get(
+                            (*state_key_s_n_1, action_index_s_n_1)
+                        )
                     )
-                    td_return = (discount ** (n + 1)) * actoin_value_s_n_1
+                    td_return = (discount ** (n + 1)) * possible_remaining_value
 
                     lambda_return_s_n -= (lambda_value ** (n + 1)) * total_reward
                     lambda_return_s_n += (
@@ -246,12 +254,15 @@ class ModelFreeAgent:
                 lambda_return_s_n,
             )
 
+    # TODO: make backward_td_lambda(0) equivalent to td_learning
+    # TODO: make step_size more testable
     def backward_td_lambda_learning_online(
         self,
         sequence,
         discount=1,
         lambda_value=1,
         final=False,
+        q_learning=False,
     ):
         """backward_sarsa_lambda_learning
 
@@ -289,8 +300,12 @@ class ModelFreeAgent:
             self.action_eligibility_trace.update(
                 state_action_key, discount=discount, lambda_value=lambda_value
             )
-            td_return = self.action_value_store.get(new_state_action_key)
-            td_target = immediate_reward + discount * td_return
+            possible_remaining_value = (
+                greedy_policy(new_state_key, self.ACTIONS, self.action_value_store)[1]
+                if q_learning
+                else self.action_value_store.get(new_state_action_key)
+            )
+            td_target = immediate_reward + discount * possible_remaining_value
 
             self.action_value_store.learn_with_eligibility_trace(
                 self.action_eligibility_trace,
