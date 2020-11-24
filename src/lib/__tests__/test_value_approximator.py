@@ -11,7 +11,7 @@ class TestInit:
         assert value_approximator.feature_function(1) == 1
         assert type(value_approximator.weights) is np.ndarray
         assert type(value_approximator.cache) is np.ndarray
-        assert value_approximator.metrics_history["diff"] == []
+        assert value_approximator.metrics_history == {}
 
     def test_custom_feature_function(self):
         def feature_function(input):
@@ -161,14 +161,14 @@ class TestDiff:
         assert abs(value_approximator.diff() - 0.04) < 1e-5
 
 
-def test_compare_value_map():
+def test_compare():
     value_approximator = ValueApproximator("value_approximator")
     value_approximator.weights = np.array([1.0, 1.0, 1.0])
     value_approximator.feature_function = lambda x: [*x, 1]
     value_map = ValueMap("value_map")
     value_map.set((1, 2), 1)
     value_map.set((2, 2), 3)
-    assert value_approximator.compare_value_map(value_map) - np.sqrt(6.5) < 1e-5
+    assert value_approximator.compare(value_map) - np.sqrt(6.5) < 1e-5
 
 
 def test_record():
