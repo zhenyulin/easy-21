@@ -1,3 +1,7 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+
 class ValueStore:
     """ValueStore
 
@@ -14,10 +18,13 @@ class ValueStore:
     #
     # metrics history function
     #
-    def reset_metrics_history(self):
-        self.metrics_history = {}
+    def reset_metrics_history(self, metrics_name=None):
+        if metrics_name is None:
+            self.metrics_history = {}
+        else:
+            self.metrics_history[metrics_name] = []
 
-    def record(self, metrics_names, log=True):
+    def record(self, metrics_names, value=None, log=True):
         for metrics_name in metrics_names:
 
             metrics_method = getattr(self, metrics_name)
@@ -49,3 +56,27 @@ class ValueStore:
             return True
         else:
             return False
+
+    def plot_metrics_history(
+        self,
+        metrics_name,
+        x=None,
+        title=None,
+        figsize=(18, 18),
+    ):
+        plt.figure(figsize=figsize)
+        ax = plt.axes()
+
+        y = self.metrics_history[metrics_name]
+
+        if x is None:
+            x = np.arange(1, len(y) + 1, 1)
+
+        if len(x) < 50:
+            plt.xticks(x)
+
+        plt.title(
+            f"{self.name} - metrics history[{metrics_name}]" if title is None else title
+        )
+
+        ax.plot(x, y)

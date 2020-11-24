@@ -20,27 +20,31 @@ sys.path.append("../")
 from numpy import arange
 from tqdm import tqdm
 
-from game import playout, ACTIONS
 from module.model_free_agent import ModelFreeAgent
-from util.plot import plot_line
 
-EPISODES = int(1e3)
+from game import playout, ACTIONS
+
+EPISODES = int(1e4)
 
 PLAYER = ModelFreeAgent("player", ACTIONS)
 PLAYER.load_optimal_state_values()
+
+PLAYER.greedy_state_value_store.learning_progress = (
+    PLAYER.compare_learning_progress_with_optimal
+)
+PLAYER.greedy_state_value_store.lambda_value_performance = (
+    PLAYER.compare_learning_progress_with_optimal
+)
 
 
 def test_lambda_value_performance():
 
     lambda_value_range = arange(0, 1.1, 0.1)
-    lambda_value_performance = []
 
     for lambda_value in tqdm(lambda_value_range):
         print("lambda_value: ", lambda_value)
 
         PLAYER.action_value_store.reset()
-
-        learning_curve_per_episode = []
 
         for _ in range(EPISODES):
             playout(
@@ -50,19 +54,24 @@ def test_lambda_value_performance():
                 ),
             )
 
-            PLAYER.set_greedy_state_values()
-
             if lambda_value in [0.0, 1.0] and _ % 10 == 0:
-                learning_curve_per_episode.append(
-                    PLAYER.compare_learning_progress_with_optimal()
+                PLAYER.greedy_state_value_store.record(
+                    ["learning_progress"],
+                    log=False,
                 )
 
         if lambda_value in [0.0, 1.0]:
-            plot_line(learning_curve_per_episode, title=f"lambda_value: {lambda_value}")
+            PLAYER.greedy_state_value_store.plot_metrics_history(
+                "learning_progress",
+                title=f"learning progress at {EPISODES:.0e} episodes - lambda_value: {lambda_value}",
+            )
+            PLAYER.greedy_state_value_store.reset_metrics_history("learning_progress")
 
-        lambda_value_performance.append(PLAYER.compare_learning_progress_with_optimal())
+        PLAYER.greedy_state_value_store.record(["lambda_value_performance"])
 
-    plot_line(lambda_value_performance, x=lambda_value_range)
+    PLAYER.greedy_state_value_store.plot_metrics_history(
+        "lambda_value_performance", x=lambda_value_range
+    )
 
 
 try:

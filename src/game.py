@@ -5,9 +5,7 @@ from random import random
 
 ACTIONS = ["stick", "hit"]
 
-PLAYER_STATE_LIST = [
-    (dealer, player) for dealer in range(1, 10) for player in range(1, 22)
-]
+PLAYER_STATES = [(dealer, player) for dealer in range(1, 10) for player in range(1, 22)]
 
 
 def sample(adding_only=False):

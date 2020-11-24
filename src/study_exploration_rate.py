@@ -19,15 +19,17 @@ from module.model_free_agent import ModelFreeAgent
 from util.plot import plot_line
 
 EPISODES = int(1e5)
-BATCH = 100
 
 PLAYER = ModelFreeAgent("player", ACTIONS)
 PLAYER.load_optimal_state_values()
 
+PLAYER.greedy_state_value_store.learning_progress = (
+    PLAYER.compare_learning_progress_with_optimal
+)
+
 
 def test_exploration_rate():
     exploration_rate_range = np.arange(0.1, 1.1, 0.1)
-    exploration_rate_performance = []
 
     for exploration_rate in tqdm(exploration_rate_range):
         print("exploration rate:", exploration_rate)
@@ -43,13 +45,12 @@ def test_exploration_rate():
                 player_offline_learning=PLAYER.monte_carlo_learning_offline,
             )
 
-        PLAYER.set_greedy_state_values()
+        PLAYER.greedy_state_value_store.record(["learning_progress"])
 
-        exploration_rate_performance.append(
-            PLAYER.compare_learning_progress_with_optimal()
-        )
-
-    plot_line(exploration_rate_performance, x=exploration_rate_range)
+    PLAYER.greedy_state_value_store.plot_metrics_history(
+        "learning_progress",
+        x=exploration_rate_range,
+    )
 
 
 try:

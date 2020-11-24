@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 from src.lib.value_map import ValueMap
 from src.lib.value_approximator import ValueApproximator
 from src.lib.eligibility_trace import EligibilityTrace
@@ -21,7 +19,14 @@ class ModelFreeAgent:
     - control = value learning & policy iteration
     """
 
-    def __init__(self, name, ACTIONS, use_approximator=False, feature_function=lambda x: x):
+    def __init__(
+        self,
+        name,
+        ACTIONS,
+        STATES=None,
+        STATE_LABELS=None,
+        approximator_function=None,
+    ):
         """
         ACTIONS:
         the order of the actions should not be relavent
@@ -38,17 +43,28 @@ class ModelFreeAgent:
         self.name = name
 
         self.ACTIONS = ACTIONS
+        self.STATES = STATES
+        self.STATE_LABELS = STATE_LABELS
 
-        self.use_approximator = use_approximator
+        self.approximator_function = approximator_function
 
-        self.action_value_store = ValueMap(f"{name}_action_values") if not use_approximator else ValueApproximator(f"{name}_action_value_approximator", feature_function=feature_function)
+        self.action_value_store = (
+            ValueMap(f"{name}_action_values")
+            if approximator_function is None
+            else ValueApproximator(
+                f"{name}_action_value_approximator",
+                feature_function=approximator_function,
+            )
+        )
 
         self.greedy_state_value_store = ValueMap(f"{name}_greedy_state_values")
         self.greedy_policy_action_store = ValueMap(f"{name}_greedy_policy_actions")
 
         # for learning curve metrics when the optimal is known
         self.optimal_state_value_store = ValueMap(f"{name}_optimal_state_values")
+        self.true_action_value_store = ValueMap(f"{name}_true_action_values")
 
+        # for backward_td_lambda_learning_online
         self.action_eligibility_trace = EligibilityTrace()
 
         self.default_file_path_for_optimal_state_values = (
@@ -87,8 +103,8 @@ class ModelFreeAgent:
         the best action action values are guaranteed to converge
 
         Model-Free:
-        - learning state value needs the model of transition matrix to produce policy
-        - learning action-value is model-free, use greedy-policy
+        - learning state-value needs the model(transition matrix) for policy
+        - learning action-value is model-free for greedy-policy
 
         Arguments:
           episode {list} -- the complete sequence with an end
@@ -122,6 +138,7 @@ class ModelFreeAgent:
         final=False,
     ):
         """temporal difference learning online
+
         - online: update on every step
         - equivalent to offline update every step at the end of the episode
 
@@ -130,11 +147,6 @@ class ModelFreeAgent:
         - works in continuing (non-terminating) environment
         - bootstrapping the return of the remaining trajectory
         estimated by the discounted last action value
-
-        Dynamics:
-        G_s^a = R + discount * Q(S', A') is a sample of Bellman Equation
-
-        reference: L5 RL by David Silver
         """
 
         # unless for the final step, it needs a further step action value
@@ -179,17 +191,16 @@ class ModelFreeAgent:
         - for a final step n, assign the remaining weight lambda_value ** n
         - equivalent to lambda_value ** n on reward_n
 
-        # if lambda_value = 0.1, weights = [0.9, 0.09, 0.009, ..., 0.0001]
-        # if lambda_value = 0.9, weights = [0.1, 0.09, 0.081, ..., 0.59]
-
-        reference: L5 RL by David Silver
+        - if lambda_value = 0.1, weights can be [0.9, 0.09, 0.009, 0.001]
+        - if lambda_value = 0.5, weights can be [0.5, 0.25, 0.125, 0.125]
+        - if lambda_value = 0.9, weights can be [0.1, 0.09, 0.081, 0.729]
 
         Arguments:
-          episode {[type]} -- [description]
+          episode {list} -- complete sequence of an episode
 
         Keyword Arguments:
-          discount {number} -- [description] (default: {1})
-          lambda_value {number} -- [description] (default: {1})
+          discount {number} -- discount factor for future rewards (default: {1})
+          lambda_value {number} -- default to monte carlo learning (default: {1})
         """
         S = len(episode)
 
@@ -203,7 +214,7 @@ class ModelFreeAgent:
             for n in range(0, S - s):
                 [state_key_s_n, action_index_s_n, reward_s_n] = episode[s + n]
 
-                # for a complete episode, reward is all guaranteed to be true sample
+                # for a complete episode, rewards are guaranteed to be true samples
                 total_reward += discount ** n * reward_s_n
                 # initial weight assuming last step with final reward
                 # and accumulate it to the lambda_return
@@ -211,6 +222,9 @@ class ModelFreeAgent:
 
                 # if there's a next step, means s_n not final
                 # factor in the td_return for estimation
+                #
+                # for reward in case it is not final
+                # adjust the weight to (1-lambda_value)(lambda_value ** n)
                 if n + 1 < S - s:
                     [
                         state_key_s_n_1,
@@ -221,8 +235,7 @@ class ModelFreeAgent:
                         (*state_key_s_n_1, action_index_s_n_1)
                     )
                     td_return = (discount ** (n + 1)) * actoin_value_s_n_1
-                    # adjust the weight to (1-lambda_value)(lambda_value ** n)
-                    # for reward in case it is not final
+
                     lambda_return_s_n -= (lambda_value ** (n + 1)) * total_reward
                     lambda_return_s_n += (
                         (1 - lambda_value) * (lambda_value ** n) * td_return
@@ -300,37 +313,42 @@ class ModelFreeAgent:
             )
 
     #
-    # Helper Functions
+    # Helper Functions - Greedy Value Store
     #
-    def extract_state_keys_from_action_store(self):
+    def get_state_keys(self):
+        if self.STATES is not None:
+            return self.STATES
+
         state_action_keys = self.action_value_store.keys()
-        state_keys = set([key[:-1] for key in state_action_keys])
+        state_keys = list(set([key[:-1] for key in state_action_keys]))
         return state_keys
 
-    def set_greedy_policy_actions(self, all_state_keys=None):
-        state_keys = self.extract_state_keys_from_action_store() if all_state_keys is None else all_state_keys
-        for state_key in state_keys:
-            greedy_action_index, _ = greedy_policy(
-                state_key, self.ACTIONS, self.action_value_store
-            )
-            self.greedy_policy_action_store.set(state_key, greedy_action_index)
-
-    def set_greedy_state_values(self, all_state_keys=None):
-        state_keys = self.extract_state_keys_from_action_store() if all_state_keys is None else all_state_keys
-        for state_key in state_keys:
-            _, greedy_action_value = greedy_policy(
+    def set_greedy_value_stores(self):
+        for state_key in self.get_state_keys():
+            greedy_action_index, greedy_action_value = greedy_policy(
                 state_key, self.ACTIONS, self.action_value_store
             )
             self.greedy_state_value_store.set(state_key, greedy_action_value)
+            self.greedy_policy_action_store.set(state_key, greedy_action_index)
+
+    def plot_2d_greedy_value_stores(self):
+        [x_label, y_label] = (
+            self.STATE_LABELS if self.STATE_LABELS is not None else [None, None]
+        )
+        self.greedy_state_value_store.plot_2d_value(x_label, y_label)
+        self.greedy_policy_action_store.plot_2d_value(
+            x_label, y_label, z_label="Action Index"
+        )
+
+    def compare_learning_progress_with_optimal(self):
+        self.set_greedy_value_stores()
+        return self.greedy_state_value_store.compare(self.optimal_state_value_store)
 
     #
     # Helper Functions - Optimal I/O & Compare
     #
-    def set_and_save_optimal_state_values(self, path=None):
-        self.optimal_state_value_store.data = deepcopy(
-            self.greedy_state_value_store.data
-        )
-        self.optimal_state_value_store.save(
+    def save_greedy_state_values_as_optimal(self, path=None):
+        self.greedy_state_value_store.save(
             self.default_file_path_for_optimal_state_values if path is None else path
         )
 
@@ -338,6 +356,3 @@ class ModelFreeAgent:
         self.optimal_state_value_store.load(
             self.default_file_path_for_optimal_state_values if path is None else path
         )
-
-    def compare_learning_progress_with_optimal(self):
-        return self.greedy_state_value_store.compare(self.optimal_state_value_store)

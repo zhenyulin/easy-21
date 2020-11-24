@@ -13,16 +13,15 @@ from tqdm import trange
 
 from game import playout, ACTIONS
 from module.model_free_agent import ModelFreeAgent
-from util.plot import plot_2d_value_map, plot_line
 
 
-EPISODES = int(1e4)
+EPISODES = int(1e5)
 BATCH = 100
 
 PLAYER = ModelFreeAgent("player", ACTIONS)
 
 
-def train():
+def train(save_after_converge):
 
     for _ in trange(BATCH, leave=True):
         for _ in range(EPISODES):
@@ -34,23 +33,20 @@ def train():
                 player_offline_learning=PLAYER.monte_carlo_learning_offline,
             )
 
-        PLAYER.set_greedy_state_values()
-        PLAYER.set_greedy_policy_actions()
+        PLAYER.set_greedy_value_stores()
 
         PLAYER.greedy_state_value_store.record(["diff"])
         if PLAYER.greedy_state_value_store.converged("diff", 0.001):
+            if save_after_converge:
+                PLAYER.save_greedy_state_values_as_optimal()
             break
 
-    # TODO: integrate plot into policy store?
-    # need more generic x,y
-    plot_2d_value_map(PLAYER.greedy_state_value_store)
-    plot_2d_value_map(PLAYER.greedy_policy_action_store)
+    PLAYER.plot_2d_greedy_value_stores()
 
-    plot_line(PLAYER.greedy_state_value_store.metrics_history["diff"])
+    PLAYER.greedy_state_value_store.plot_metrics_history("diff")
 
 
 try:
-    train()
-    PLAYER.set_and_save_optimal_state_values()
+    train(True)
 except Exception as e:
     print(e)
