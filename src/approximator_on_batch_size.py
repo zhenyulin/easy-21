@@ -1,5 +1,5 @@
 #
-# RESULTS: off_policy shows better performance with TD(0)
+# RESULTS: batch_size~20 is showing the best performance
 #
 # %%
 import sys
@@ -7,7 +7,7 @@ import sys
 sys.path.append("../")
 
 
-from tqdm import tqdm
+from tqdm import tqdm, trange
 
 from module.model_free_agent import ModelFreeAgent
 
@@ -37,31 +37,27 @@ PLAYER.target_state_value_store.batch_size_performance = (
 def test():
 
     experiences = []
-    for _ in range(EPISODES):
+    for _ in trange(EPISODES):
         player_episode, _ = playout(player_policy=PLAYER.e_greedy_policy)
         experiences.append(player_episode)
 
     #
     # experience replay with TD(lambda) On-Policy
     #
-    batch_size_options = [10, 50, 100]
+    batch_size_options = [10, 20, 50, 100, 200]
 
     for batch_size in tqdm(batch_size_options):
         print("batch_size: ", batch_size)
 
         PLAYER.action_value_store.reset()
-        BATCH = len(experiences) // batch_size
 
-        for _ in range(EPOCH):
-            for batch_n in range(BATCH):
-                batch_episodes = experiences[
-                    batch_n * batch_size : (batch_n + 1) * batch_size
-                ]
-                PLAYER.forward_td_lambda_learning_offline_batch(
-                    batch_episodes,
-                    lambda_value=0,
-                    off_policy=True,
-                )
+        for _ in trange(EPOCH):
+            PLAYER.forward_td_lambda_learning_offline_batch(
+                experiences,
+                lambda_value=1,
+                off_policy=True,
+                batch_size=batch_size,
+            )
 
             PLAYER.target_state_value_store.record(["learning_progress"])
 
