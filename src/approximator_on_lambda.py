@@ -2,8 +2,6 @@
 # test performance of value approximator using forward_td_lambda_learning_offline
 # with different lambda_value
 #
-# in terms of greedy state values vs optimal state values
-# after 1000 episodes, value approximator actually shows better performance
 #
 # there's no correlation between performance and lambda values
 #
@@ -12,8 +10,7 @@ import sys
 
 sys.path.append("../")
 
-import numpy as np
-
+from numpy import arange
 from tqdm import tqdm
 
 from module.model_free_agent import ModelFreeAgent
@@ -21,7 +18,8 @@ from module.model_free_agent import ModelFreeAgent
 from game import playout, ACTIONS, STATE_LABELS, PLAYER_STATES
 from feature_function import key_to_features
 
-EPISODES = int(1e4)
+EPISODES = int(1e5)
+EPOCH = 5
 
 PLAYER = ModelFreeAgent(
     "player",
@@ -42,22 +40,30 @@ PLAYER.target_state_value_store.lambda_value_performance = (
 
 def test_lambda_value_performance():
 
-    lambda_value_range = np.arange(0, 1.1, 0.1)
+    experiences = []
+    for _ in range(EPISODES):
+        player_episode, _ = playout(player_policy=PLAYER.e_greedy_policy)
+        experiences.append(player_episode)
+
+    #
+    # experience replay with TD(lambda) Off-Policy
+    #
+    lambda_value_range = arange(0, 1.1, 0.1)
 
     for lambda_value in tqdm(lambda_value_range):
         print("lambda_value: ", lambda_value)
 
         PLAYER.action_value_store.reset()
 
-        for _ in range(EPISODES):
-            playout(
-                player_policy=PLAYER.e_greedy_policy,
-                player_offline_learning=lambda episode: PLAYER.forward_td_lambda_learning_offline(
-                    episode, lambda_value=lambda_value
-                ),
-            )
+        for _ in range(EPOCH):
+            for episode in experiences:
+                PLAYER.forward_td_lambda_learning_offline(
+                    episode,
+                    lambda_value=lambda_value,
+                    off_policy=True,
+                )
 
-            if lambda_value in [0.0, 1.0] and _ % 10 == 0:
+            if lambda_value in [0.0, 1.0]:
                 PLAYER.target_state_value_store.record(
                     ["learning_progress"],
                     log=False,
@@ -66,7 +72,7 @@ def test_lambda_value_performance():
         if lambda_value in [0.0, 1.0]:
             PLAYER.target_state_value_store.plot_metrics_history(
                 "learning_progress",
-                title=f"learning progress at {EPISODES:.0e} episodes - lambda_value: {lambda_value}",
+                title=f"learning progress - lambda_value: {lambda_value}",
             )
             PLAYER.target_state_value_store.reset_metrics_history("learning_progress")
 
