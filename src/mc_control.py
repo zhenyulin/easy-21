@@ -11,14 +11,14 @@ sys.path.append("../")
 
 from tqdm import trange
 
-from game import playout, ACTIONS
+from game import playout, ACTIONS, STATE_LABELS
 from module.model_free_agent import ModelFreeAgent
 
 
 EPISODES = int(1e5)
 BATCH = 100
 
-PLAYER = ModelFreeAgent("player", ACTIONS)
+PLAYER = ModelFreeAgent("player", ACTIONS, STATE_LABELS=STATE_LABELS)
 
 
 def train(save_after_converge):
@@ -33,17 +33,20 @@ def train(save_after_converge):
                 player_offline_learning=PLAYER.monte_carlo_learning_offline,
             )
 
-        PLAYER.set_greedy_value_stores()
-
-        PLAYER.greedy_state_value_store.record(["diff"])
-        if PLAYER.greedy_state_value_store.converged("diff", 0.001):
+        PLAYER.action_value_store.record(["diff"])
+        if PLAYER.action_value_store.converged("diff", 0.001):
             if save_after_converge:
+                PLAYER.set_greedy_value_stores()
                 PLAYER.save_greedy_state_values_as_optimal()
+                PLAYER.action_value_store.save(
+                    "../output/player_true_action_values.json"
+                )
             break
 
+    PLAYER.set_greedy_value_stores()
     PLAYER.plot_2d_greedy_value_stores()
 
-    PLAYER.greedy_state_value_store.plot_metrics_history("diff")
+    PLAYER.action_value_store.plot_metrics_history("diff")
 
 
 try:
