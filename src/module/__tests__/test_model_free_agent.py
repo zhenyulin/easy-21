@@ -19,8 +19,8 @@ def test_init():
 
     assert test.name == "test"
     assert test.action_value_store.name == "test_action_values"
-    assert test.greedy_state_value_store.name == "test_greedy_state_values"
-    assert test.greedy_policy_action_store.name == "test_greedy_policy_actions"
+    assert test.target_state_value_store.name == "test_target_state_values"
+    assert test.target_policy_action_store.name == "test_target_policy_actions"
     assert test.optimal_state_value_store.name == "test_optimal_state_values"
 
     assert test.action_eligibility_trace
