@@ -36,7 +36,7 @@ class ValueStore:
             self.metrics_history[metrics_name].append(metrics)
 
             if log:
-                print(f"{self.name}_{metrics_name}: {metrics:.3f}")
+                print(f"{self.name}_{metrics_name}: {metrics:.4f}")
 
             if metrics_name == "diff":
                 self.backup()
@@ -56,9 +56,14 @@ class ValueStore:
         else:
             return False
 
-    def record_and_check_convergence(self, metrics_name, log_record=True):
+    def record_and_check_convergence(
+        self,
+        metrics_name,
+        threshold=0.001,
+        log_record=True,
+    ):
         self.record([metrics_name], log=log_record)
-        return self.converged(metrics_name)
+        return self.converged(metrics_name, threshold=threshold)
 
     def plot_metrics_history(
         self,
