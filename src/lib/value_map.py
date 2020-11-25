@@ -51,9 +51,9 @@ class ValueMap(ValueStore):
     def keys(self):
         return self.data.keys()
 
-    def get(self, key):
+    def get(self, key, value_key="value"):
         self.init_if_not_found(key)
-        return self.data[key]["value"]
+        return self.data[key][value_key]
 
     def count(self, key):
         self.init_if_not_found(key)
@@ -150,6 +150,7 @@ class ValueMap(ValueStore):
         x_label,
         y_label,
         z_label="Value",
+        value_key="value",
         title=None,
         figsize=(20, 20),
     ):
@@ -166,7 +167,7 @@ class ValueMap(ValueStore):
 
         X, Y = np.meshgrid(x, y)
 
-        Z = np.array([[self.get((a, b)) for a in x] for b in y])
+        Z = np.array([[self.get((a, b), value_key=value_key) for a in x] for b in y])
 
         plt.xticks(x)
         plt.yticks(y)
