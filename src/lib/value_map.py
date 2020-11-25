@@ -180,6 +180,8 @@ class ValueMap(ValueStore):
 
         ax.plot_surface(X, Y, Z)
 
+        return ax
+
     #
     # file I/O functions
     #

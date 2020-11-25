@@ -95,16 +95,3 @@ PLAYER.action_value_store.plot_metrics_history("diff")
 PLAYER.save_target_state_values_as_optimal()
 PLAYER.action_value_store.save("../output/player_true_action_values.json")
 PLAYER.plot_2d_target_value_stores()
-
-# %%
-for state_key in PLAYER.target_state_value_store.keys():
-    optimal_action_index = PLAYER.target_policy_action_store.get(state_key)
-    all_data = PLAYER.action_value_store.data[(*state_key, optimal_action_index)]
-    PLAYER.target_state_value_store.data[state_key] = all_data
-
-PLAYER.target_state_value_store.plot_2d_value(
-    x_label="Dealer", y_label="Player", z_label="Variance", value_key="mse"
-)
-PLAYER.target_state_value_store.plot_2d_value(
-    x_label="Dealer", y_label="Player", z_label="Count", value_key="count"
-)
