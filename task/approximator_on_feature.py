@@ -64,14 +64,14 @@ def train():
                     off_policy=True,
                 )
 
-            PLAYER.target_state_value_store.record(["learning_progress"])
+            PLAYER.target_state_value_store.record("learning_progress")
 
         PLAYER.target_state_value_store.plot_metrics_history("learning_progress")
 
         PLAYER.set_target_value_stores()
         PLAYER.plot_2d_target_value_stores()
 
-        PLAYER.target_state_value_store.record(["feature_function_performance"])
+        PLAYER.target_state_value_store.record("feature_function_performance")
 
     PLAYER.target_state_value_store.plot_metrics_history("feature_function_performance")
 

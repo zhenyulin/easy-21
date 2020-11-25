@@ -67,7 +67,7 @@ def test_lambda_value_performance():
             )
             PLAYER.target_state_value_store.reset_metrics_history("learning_progress")
 
-        PLAYER.target_state_value_store.record(["lambda_value_performance"])
+        PLAYER.target_state_value_store.record("lambda_value_performance")
 
     PLAYER.target_state_value_store.plot_metrics_history(
         "lambda_value_performance", x=lambda_value_range

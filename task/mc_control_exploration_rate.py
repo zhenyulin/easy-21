@@ -8,7 +8,11 @@
 # - check exploration_rate ~ convergence BATCH_N, learning_progress
 #
 # RESULT:
-# - exploration_rate between [0.2, 0.8] shows better performance
+# - exploration_rate < 0.5, worse target_state_value_store convergence
+# - exploration_rate = 0.5, good balance of target_state_value_store convergence
+#   and accuracy
+# - exploration_rate > 0.5, target_state_value_store tends to converge early
+#   while accuracy hasn't reached optimal
 #
 # RUN:
 # %%
@@ -29,14 +33,19 @@ from src.easy_21.game import playout, ACTIONS
 BATCH = 100
 EPISODES = int(1e5)
 
-DIFF_THRESHOLD = 0.01
+DIFF_THRESHOLD = 0.002
 
 PLAYER = ModelFreeAgent("player", ACTIONS)
+
 PLAYER.load_optimal_state_values()
+PLAYER.true_action_value_store.load("../output/player_true_action_values.json")
 
 PLAYER.target_state_value_store.metrics_methods[
-    "learning_progress"
-] = PLAYER.compare_learning_progress_with_optimal
+    "accuracy"
+] = PLAYER.target_state_value_store_accuracy_to_optimal
+PLAYER.action_value_store.metrics_methods[
+    "accuracy"
+] = PLAYER.action_value_store_accuracy_to_true
 
 #
 # task process
@@ -58,20 +67,28 @@ for exploration_rate in tqdm(exploration_rate_range):
                 player_offline_learning=PLAYER.monte_carlo_learning_offline,
             )
 
-        PLAYER.target_state_value_store.record(["learning_progress"])
+        PLAYER.target_state_value_store.record("accuracy")
+        PLAYER.action_value_store.record("accuracy")
 
-        if PLAYER.target_state_value_store.record_and_check_convergence(
+        if PLAYER.action_value_store.record_and_check_convergence(
             "diff", DIFF_THRESHOLD
         ):
-            PLAYER.target_state_value_store.record(["converged_on_batch"], [n])
-            PLAYER.target_state_value_store.stack_metrics_history("learning_progress")
-            PLAYER.target_state_value_store.stack_metrics_history("diff")
+            PLAYER.target_state_value_store.stack_metrics_history("accuracy")
+            PLAYER.action_value_store.stack_metrics_history("accuracy")
+
+            PLAYER.action_value_store.record("convergence", n)
+            PLAYER.action_value_store.reset_metrics_history("diff")
             break
 
-PLAYER.target_state_value_store.plot_metrics_history(
-    "converged_on_batch", x=exploration_rate_range
-)
 PLAYER.target_state_value_store.plot_metrics_history_stack(
-    "learning_progress",
+    "accuracy",
     labels=[f"{r:.1f}" for r in exploration_rate_range],
+)
+PLAYER.action_value_store.plot_metrics_history_stack(
+    "accuracy",
+    labels=[f"{r:.1f}" for r in exploration_rate_range],
+)
+PLAYER.action_value_store.plot_metrics_history(
+    "convergence",
+    x=exploration_rate_range,
 )

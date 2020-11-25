@@ -59,7 +59,7 @@ def test():
                 mini_batch_size=mini_batch_size,
             )
 
-            PLAYER.target_state_value_store.record(["learning_progress"])
+            PLAYER.target_state_value_store.record("learning_progress")
 
         PLAYER.target_state_value_store.plot_metrics_history(
             "learning_progress",
@@ -67,7 +67,7 @@ def test():
         )
         PLAYER.target_state_value_store.reset_metrics_history("learning_progress")
 
-        PLAYER.target_state_value_store.record(["mini_batch_size_performance"])
+        PLAYER.target_state_value_store.record("mini_batch_size_performance")
 
     PLAYER.target_state_value_store.plot_metrics_history(
         "mini_batch_size_performance", x=mini_batch_size_options

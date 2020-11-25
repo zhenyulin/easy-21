@@ -54,7 +54,7 @@ def test():
             mini_batch_size=20,
         )
 
-        PLAYER.target_state_value_store.record(["learning_progress"])
+        PLAYER.target_state_value_store.record("learning_progress")
         if PLAYER.action_value_store.record_and_check_convergence("diff"):
             break
 

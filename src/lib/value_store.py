@@ -20,23 +20,19 @@ class ValueStore:
     #
     # metrics history function
     #
-    def record(self, metrics_names, values=None, log=True):
-        for i, metrics_name in enumerate(metrics_names):
+    def record(self, metrics_name, metrics=None, log=True):
 
-            value = (
-                self.metrics_methods[metrics_name]() if values is None else values[i]
-            )
+        if metrics_name not in self.metrics_history.keys():
+            self.metrics_history[metrics_name] = []
 
-            if metrics_name not in self.metrics_history.keys():
-                self.metrics_history[metrics_name] = []
+        value = self.metrics_methods[metrics_name]() if metrics is None else metrics
+        self.metrics_history[metrics_name].append(value)
 
-            self.metrics_history[metrics_name].append(value)
+        if log:
+            print(f"{self.name}_{metrics_name}: {value:.4f}")
 
-            if log:
-                print(f"{self.name}_{metrics_name}: {value:.4f}")
-
-            if metrics_name == "diff":
-                self.backup()
+        if metrics_name == "diff":
+            self.backup()
 
     def converged(self, metrics_name, threshold=0.001, log=True):
         last_3 = self.metrics_history[metrics_name][-4:-1]
@@ -59,7 +55,7 @@ class ValueStore:
         threshold=0.001,
         log_record=True,
     ):
-        self.record([metrics_name], log=log_record)
+        self.record(metrics_name, log=log_record)
         return self.converged(metrics_name, threshold=threshold)
 
     def reset_metrics_history(self, metrics_name=None):
