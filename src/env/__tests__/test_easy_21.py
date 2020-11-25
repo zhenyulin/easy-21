@@ -1,7 +1,7 @@
 import pytest
 
 from unittest import mock
-from src.game import sample, compare, hit, step, init, game, playout
+from src.env.easy_21 import sample, compare, hit, step, init, game, playout
 from copy import deepcopy
 
 
@@ -96,7 +96,7 @@ class TestCompare:
 
 
 class TestHit:
-    @mock.patch("src.game.sample")
+    @mock.patch("src.env.easy_21.sample")
     def test_update_state(self, mock_sample):
         """
         when hit(party, state)
@@ -131,7 +131,7 @@ class TestHit:
 
 
 class TestStep:
-    @mock.patch("src.game.sample", return_value=10)
+    @mock.patch("src.env.easy_21.sample", return_value=10)
     def test_player_not_stick(self, mock_sample):
         """
         when player choose not to stick, step() would hit on player
@@ -146,7 +146,7 @@ class TestStep:
             "reward": None,
         }
 
-    @mock.patch("src.game.sample", return_value=10)
+    @mock.patch("src.env.easy_21.sample", return_value=10)
     def test_player_stick_dealer_not_stick(self, mock_sample):
         """
         when player choose to stick but dealer not, step() would hit on dealer
@@ -161,7 +161,7 @@ class TestStep:
             "reward": None,
         }
 
-    @mock.patch("src.game.sample", return_value=10)
+    @mock.patch("src.env.easy_21.sample", return_value=10)
     def test_player_stick_dealer_stick(self, mock_sample):
         """
         when both the player and dealer choose to stick
@@ -179,7 +179,7 @@ class TestStep:
 
 
 class TestInit:
-    @mock.patch("src.game.sample", return_value=10)
+    @mock.patch("src.env.easy_21.sample", return_value=10)
     def test_get_positive_sample(self, mock_sample):
         """
         init_state() set an initial game state
@@ -195,7 +195,7 @@ class TestInit:
 
 class TestGame:
     @pytest.mark.timeout(5)
-    @mock.patch("src.game.sample", return_value=10)
+    @mock.patch("src.env.easy_21.sample", return_value=10)
     def test_game_with_dummy_player_dealer_policy(self, mock_sample):
         print("\n")
         assert game(log=True) == {
@@ -206,20 +206,20 @@ class TestGame:
 
 
 class TestPlayout:
-    @mock.patch("src.game.sample", return_value=10)
+    @mock.patch("src.env.easy_21.sample", return_value=10)
     def test_return_correct_sequences(self, mock_sample):
         player_sequence, dealer_sequence = playout()
         assert player_sequence == [[(10, 10), 0, 0], [(10, 20), 1, 0]]
         assert dealer_sequence == [[(10, 20), 0, 0], [(20, 20), 1, 0]]
 
-    @mock.patch("src.game.sample", return_value=10)
+    @mock.patch("src.env.easy_21.sample", return_value=10)
     def test_player_offline_learning_sequence(self, mock_sample):
         mock_learning = mock.Mock()
         playout(player_offline_learning=mock_learning)
         expected = [mock.call([[(10, 10), 0, 0], [(10, 20), 1, 0]])]
         assert mock_learning.call_args_list == expected
 
-    @mock.patch("src.game.sample", return_value=10)
+    @mock.patch("src.env.easy_21.sample", return_value=10)
     def test_player_online_learning_sequence(self, mock_sample):
         mock_learning = CopyMock()
 
@@ -232,14 +232,14 @@ class TestPlayout:
         ]
         assert mock_learning.call_args_list == expected
 
-    @mock.patch("src.game.sample", return_value=10)
+    @mock.patch("src.env.easy_21.sample", return_value=10)
     def test_dealer_offline_learning_sequence(self, mock_sample):
         mock_learning = mock.Mock()
         playout(dealer_offline_learning=mock_learning)
         expected = [mock.call([[(10, 20), 0, 0], [(20, 20), 1, 0]])]
         assert mock_learning.call_args_list == expected
 
-    @mock.patch("src.game.sample", return_value=10)
+    @mock.patch("src.env.easy_21.sample", return_value=10)
     def test_dealer_online_learning_sequence(self, mock_sample):
         mock_learning = CopyMock()
 
