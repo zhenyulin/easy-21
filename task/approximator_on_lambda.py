@@ -14,10 +14,10 @@ sys.path.append("../")
 from numpy import arange
 from tqdm import tqdm, trange
 
-from module.model_free_agent import ModelFreeAgent
+from src.module.model_free_agent import ModelFreeAgent
 
-from game import playout, ACTIONS, STATE_LABELS, PLAYER_STATES
-from feature_function import key_to_features
+from src.easy_21.game import playout, ACTIONS, STATE_LABELS, PLAYER_STATES
+from src.easy_21.feature_function import key_to_features
 
 EPISODES = int(1e5)
 EPOCH = 5

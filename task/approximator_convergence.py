@@ -13,10 +13,9 @@ sys.path.append("../")
 from tqdm import trange
 from random import shuffle
 
-from module.model_free_agent import ModelFreeAgent
+from src.module.model_free_agent import ModelFreeAgent
 
-from game import playout, ACTIONS, STATE_LABELS, PLAYER_STATES
-from feature_function import table_lookup
+from src.easy_21 import game, feature_function
 
 BATCH = 50
 EPISODES = int(1e4)
@@ -25,10 +24,10 @@ EPOCH = 20
 
 PLAYER = ModelFreeAgent(
     "player",
-    ACTIONS,
-    STATE_LABELS,
-    PLAYER_STATES,
-    approximator_function=table_lookup,
+    game.ACTIONS,
+    game.STATE_LABELS,
+    game.PLAYER_STATES,
+    approximator_function=feature_function.table_lookup,
 )
 PLAYER.load_optimal_state_values()
 
@@ -43,7 +42,7 @@ def test():
 
     for _ in trange(BATCH):
         for _ in range(EPISODES):
-            player_episode, _ = playout(player_policy=PLAYER.e_greedy_policy)
+            player_episode, _ = game.playout(player_policy=PLAYER.e_greedy_policy)
             experiences.append(player_episode)
 
     for _ in trange(EPOCH):

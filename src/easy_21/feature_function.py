@@ -1,4 +1,4 @@
-from game import ACTIONS
+from .game import ACTIONS
 
 
 def key_to_features(state_action):

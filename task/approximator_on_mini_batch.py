@@ -9,10 +9,10 @@ sys.path.append("../")
 
 from tqdm import tqdm, trange
 
-from module.model_free_agent import ModelFreeAgent
+from src.module.model_free_agent import ModelFreeAgent
 
-from game import playout, ACTIONS, STATE_LABELS, PLAYER_STATES
-from feature_function import table_lookup
+from src.easy_21.game import playout, ACTIONS, STATE_LABELS, PLAYER_STATES
+from src.easy_21.feature_function import table_lookup
 
 EPISODES = int(1e5)
 EPOCH = 10
