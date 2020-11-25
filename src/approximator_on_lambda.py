@@ -1,9 +1,10 @@
 #
-# test performance of value approximator using forward_td_lambda_learning_offline
+# test performance of value approximator
 # with different lambda_value
 #
+# RESULTS: no correlation between performance and lambda values, there's a lot of variances depends on the samples
 #
-# there's no correlation between performance and lambda values
+# TD(0)/TD(1) performance is generally good
 #
 # %%
 import sys
@@ -11,7 +12,7 @@ import sys
 sys.path.append("../")
 
 from numpy import arange
-from tqdm import tqdm
+from tqdm import tqdm, trange
 
 from module.model_free_agent import ModelFreeAgent
 
@@ -41,33 +42,30 @@ PLAYER.target_state_value_store.lambda_value_performance = (
 def test_lambda_value_performance():
 
     experiences = []
-    for _ in range(EPISODES):
+    for _ in trange(EPISODES):
         player_episode, _ = playout(player_policy=PLAYER.e_greedy_policy)
         experiences.append(player_episode)
 
     #
     # experience replay with TD(lambda) Off-Policy
     #
-    lambda_value_range = arange(0, 1.1, 0.1)
+    lambda_value_range = arange(0, 1.1, 0.2)
 
     for lambda_value in tqdm(lambda_value_range):
         print("lambda_value: ", lambda_value)
 
         PLAYER.action_value_store.reset()
 
-        for _ in range(EPOCH):
-            for episode in experiences:
-                PLAYER.forward_td_lambda_learning_offline(
-                    episode,
-                    lambda_value=lambda_value,
-                    off_policy=True,
-                )
+        for _ in trange(EPOCH):
+            PLAYER.forward_td_lambda_learning_offline_batch(
+                experiences,
+                lambda_value=lambda_value,
+                off_policy=True,
+                batch_size=20,
+            )
 
             if lambda_value in [0.0, 1.0]:
-                PLAYER.target_state_value_store.record(
-                    ["learning_progress"],
-                    log=False,
-                )
+                PLAYER.target_state_value_store.record(["learning_progress"])
 
         if lambda_value in [0.0, 1.0]:
             PLAYER.target_state_value_store.plot_metrics_history(
