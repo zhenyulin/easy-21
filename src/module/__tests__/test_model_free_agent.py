@@ -387,7 +387,7 @@ class TestBackwardTemporalDifferenceLambdaLearning:
 
         assert test.action_eligibility_trace.data == {(0, 0, 0): 1}
         assert test.action_value_store.data == {
-            (0, 0, 0): {"count": 1, "value": 1.0},
+            (0, 0, 0): {"count": 1, "value": 1.0, "mse": 0},
         }
 
     def test_two_step_episode_for_eligibility(self):
@@ -420,6 +420,10 @@ class TestBackwardTemporalDifferenceLambdaLearning:
             (1, 0, 0): 1,
         }
         assert test.action_value_store.data == {
-            (0, 0, 0): {"count": 2, "value": 1.125},
-            (1, 0, 0): {"count": 1, "value": 2},
+            (0, 0, 0): {
+                "count": 2,
+                "value": 1.125,
+                "mse": (0.125 - 1) * (0.125 - 1.125) * 0.25 / 2,
+            },
+            (1, 0, 0): {"count": 1, "value": 2.0, "mse": 0.0},
         }

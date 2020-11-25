@@ -27,14 +27,18 @@ class ValueMap(ValueStore):
         ValueStore.__init__(self, name)
 
         self.data = {}
-        self.cache = {}
+        self._data = {}
 
     #
     # utility functions
     #
     def init_if_not_found(self, key):
         if key not in self.data.keys():
-            self.data[key] = {"count": 0, "value": 0}
+            self.data[key] = {
+                "count": 0,
+                "value": 0,
+                "mse": 0,
+            }
 
     #
     # getter functions
@@ -72,8 +76,16 @@ class ValueMap(ValueStore):
 
         d = self.data[key]
 
+        error = sample - d["value"]
+
         d["count"] += 1
-        d["value"] += step_size(d["count"]) * (sample - d["value"])
+        d["value"] += step_size(d["count"]) * error
+
+        error_after = sample - d["value"]
+        mse_error = error * error_after - d["mse"]
+        # TODO: effect of using step_size on mse needs to be further confirmed
+        # for the case of using eligibility
+        d["mse"] += step_size(d["count"]) * mse_error
 
     def learn_with_eligibility_trace(
         self,
@@ -93,11 +105,11 @@ class ValueMap(ValueStore):
             )
 
     def backup(self):
-        self.cache = deepcopy(self.data)
+        self._data = deepcopy(self.data)
 
     def reset(self):
         self.data = {}
-        self.cache = {}
+        self._data = {}
 
     #
     # metrics functions
@@ -108,7 +120,7 @@ class ValueMap(ValueStore):
         value_range = max(values) - min([*values, 0])
 
         for key in self.data.keys():
-            old_value = self.cache[key]["value"] if key in self.cache.keys() else 0
+            old_value = self._data[key]["value"] if key in self._data.keys() else 0
             new_value = self.data[key]["value"]
 
             error = new_value - old_value
