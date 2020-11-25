@@ -29,6 +29,11 @@ class ValueMap(ValueStore):
         self.data = {}
         self._data = {}
 
+        self.metrics_methods = {
+            "diff": self.diff,
+            "compare": self.compare,
+        }
+
     #
     # utility functions
     #

@@ -24,7 +24,12 @@ class ValueApproximator(ValueStore):
         self.feature_function = feature_function
 
         self.weights = np.array([])
-        self.cache = np.array([])
+        self._weights = np.array([])
+
+        self.metrics_methods = {
+            "diff": self.diff,
+            "compare": self.compare,
+        }
 
     #
     # utility functions
@@ -41,6 +46,9 @@ class ValueApproximator(ValueStore):
     # getter functions
     #
     def get(self, input, output_features=False):
+        """
+        can be regarded as the output layer
+        """
         features = self.features(input)
         self.init_weights_if_not_yet(features)
         value = np.dot(np.transpose(features), self.weights)
@@ -70,19 +78,19 @@ class ValueApproximator(ValueStore):
             self.learn(key, sample, step_size=eligibility * 0.01)
 
     def backup(self):
-        self.cache = np.copy(self.weights)
+        self._weights = np.copy(self.weights)
 
     def reset(self):
         self.weights = np.array([])
-        self.cache = np.array([])
+        self._weights = np.array([])
 
     #
     # metrics functions
     #
     def diff(self):
-        if self.cache.size == 0:
-            self.cache = np.zeros_like(self.weights)
-        mse = (np.square(self.weights - self.cache)).mean(axis=0)
+        if self._weights.size == 0:
+            self._weights = np.zeros_like(self.weights)
+        mse = (np.square(self.weights - self._weights)).mean(axis=0)
         rmse = np.sqrt(mse)
         value_range = np.amax(self.weights) - min(np.amin(self.weights), 0)
         return rmse / value_range

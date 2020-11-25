@@ -10,7 +10,7 @@ class TestInit:
         assert value_approximator.name == "value_approximator"
         assert value_approximator.feature_function(1) == 1
         assert type(value_approximator.weights) is np.ndarray
-        assert type(value_approximator.cache) is np.ndarray
+        assert type(value_approximator._weights) is np.ndarray
         assert value_approximator.metrics_history == {}
 
     def test_custom_feature_function(self):
@@ -135,11 +135,11 @@ class Testlearn:
 
 
 class TestBackup:
-    def test_backup_to_cache(self):
+    def test_backup_to__weights(self):
         value_approximator = ValueApproximator("value_approximator")
         value_approximator.weights = np.array([1.0, 1.0, 1.0])
         value_approximator.backup()
-        assert np.allclose(value_approximator.weights, value_approximator.cache)
+        assert np.allclose(value_approximator.weights, value_approximator._weights)
 
 
 class TestReset:
@@ -149,7 +149,7 @@ class TestReset:
         value_approximator.backup()
         value_approximator.reset()
         assert np.array_equal(value_approximator.weights, [])
-        assert np.array_equal(value_approximator.cache, [])
+        assert np.array_equal(value_approximator._weights, [])
 
 
 class TestDiff:
@@ -178,4 +178,4 @@ def test_record():
     value_approximator.weights = np.array([1.2, 0.8, 1.2])
     value_approximator.record(["diff"], log=False)
     assert np.allclose(value_approximator.metrics_history["diff"], [0.2 / 1.2])
-    assert np.allclose(value_approximator.weights, value_approximator.cache)
+    assert np.allclose(value_approximator.weights, value_approximator._weights)
