@@ -1,5 +1,5 @@
 #
-# RESULTS: batch_size~20 is showing the best performance
+# RESULTS: mini_mini_batch_size of 20~50 is showing the best performance
 #
 # %%
 import sys
@@ -29,7 +29,7 @@ PLAYER.load_optimal_state_values()
 PLAYER.target_state_value_store.learning_progress = (
     PLAYER.compare_learning_progress_with_optimal
 )
-PLAYER.target_state_value_store.batch_size_performance = (
+PLAYER.target_state_value_store.mini_batch_size_performance = (
     PLAYER.compare_learning_progress_with_optimal
 )
 
@@ -44,10 +44,10 @@ def test():
     #
     # experience replay with TD(lambda) On-Policy
     #
-    batch_size_options = [10, 20, 50, 100, 200]
+    mini_batch_size_options = [10, 20, 50, 100, 200]
 
-    for batch_size in tqdm(batch_size_options):
-        print("batch_size: ", batch_size)
+    for mini_batch_size in tqdm(mini_batch_size_options):
+        print("mini_batch_size: ", mini_batch_size)
 
         PLAYER.action_value_store.reset()
 
@@ -56,21 +56,21 @@ def test():
                 experiences,
                 lambda_value=1,
                 off_policy=True,
-                batch_size=batch_size,
+                mini_batch_size=mini_batch_size,
             )
 
             PLAYER.target_state_value_store.record(["learning_progress"])
 
         PLAYER.target_state_value_store.plot_metrics_history(
             "learning_progress",
-            title=f"learning progress - batch_size: {batch_size}",
+            title=f"learning progress - mini_batch_size: {mini_batch_size}",
         )
         PLAYER.target_state_value_store.reset_metrics_history("learning_progress")
 
-        PLAYER.target_state_value_store.record(["batch_size_performance"])
+        PLAYER.target_state_value_store.record(["mini_batch_size_performance"])
 
     PLAYER.target_state_value_store.plot_metrics_history(
-        "batch_size_performance", x=batch_size_options
+        "mini_batch_size_performance", x=mini_batch_size_options
     )
 
 

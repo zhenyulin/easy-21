@@ -266,16 +266,18 @@ class ModelFreeAgent:
         discount=1,
         lambda_value=0,
         off_policy=False,
-        batch_size=100,
+        mini_batch_size=20,
     ):
-        BATCH = len(episodes) // batch_size
+        MINI_BATCH = len(episodes) // mini_batch_size
 
-        for n in range(BATCH):
-            batch_episodes = episodes[n * batch_size : (n + 1) * batch_size]
+        for n in range(MINI_BATCH):
+            mini_batch_episodes = episodes[
+                n * mini_batch_size : (n + 1) * mini_batch_size
+            ]
 
-            batch_targets = []
+            mini_batch_targets = []
 
-            for episode in batch_episodes:
+            for episode in mini_batch_episodes:
                 targets = self.forward_td_lambda_learning_offline(
                     episode,
                     discount=discount,
@@ -283,11 +285,11 @@ class ModelFreeAgent:
                     off_policy=off_policy,
                     defer_update=True,
                 )
-                batch_targets.extend(targets)
+                mini_batch_targets.extend(targets)
 
             # minimising the square errors over a batch with SGD in .learn
             # to avoid overfit to individual samples
-            for (state_action_key, lambda_return) in batch_targets:
+            for (state_action_key, lambda_return) in mini_batch_targets:
                 self.action_value_store.learn(state_action_key, lambda_return)
 
     # TODO: make backward_td_lambda(0) equivalent to td_learning
