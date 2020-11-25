@@ -74,7 +74,7 @@ class ModelFreeAgent:
     #
     # Control Policy Functions
     #
-    def e_greedy_policy(self, state_key, exploration_rate=0.1):
+    def e_greedy_policy(self, state_key, exploration_rate=0.5):
         action_index = e_greedy_policy(
             state_key,
             self.ACTIONS,
@@ -367,7 +367,7 @@ class ModelFreeAgent:
             )
 
     #
-    # Helper Functions - Greedy Value Store
+    # Helper Functions - Target Value Store
     #
     def get_state_keys(self):
         if self.STATES is not None:
@@ -394,9 +394,16 @@ class ModelFreeAgent:
             x_label, y_label, z_label="Action Index"
         )
 
-    def compare_learning_progress_with_optimal(self):
+    def target_state_value_store_accuracy_to_optimal(self):
         self.set_target_value_stores()
+        # needed for accessing other value store
+        # when wrapping metrics_method to one value store
         return self.target_state_value_store.compare(self.optimal_state_value_store)
+
+    def action_value_store_accuracy_to_true(self):
+        # needed for accessing other value store
+        # when wrapping metrics_method to one value store
+        return self.action_value_store.compare(self.true_action_value_store)
 
     #
     # Helper Functions - Optimal I/O & Compare
