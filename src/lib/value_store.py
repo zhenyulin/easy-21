@@ -13,6 +13,7 @@ class ValueStore:
     def __init__(self, name):
         self.name = name
 
+        # TODO: separate out metrics as a class
         self.metrics_history = {}
         self.metrics_history_stack = {}
         self.metrics_methods = {}
@@ -100,6 +101,7 @@ class ValueStore:
     def plot_metrics_history_stack(
         self,
         metrics_name,
+        x=None,
         title=None,
         labels=None,
         figsize=(18, 18),
@@ -119,7 +121,8 @@ class ValueStore:
             [len(metrics_history) for metrics_history in metrics_history_stack]
         )
 
-        x = np.arange(1, max_metrics_history_length + 1, 1)
+        if x is None:
+            x = np.arange(1, max_metrics_history_length + 1, 1)
 
         if len(x) < 50:
             plt.xticks(x)
