@@ -25,7 +25,7 @@ class ModelFreeAgent:
         ACTIONS,
         STATE_LABELS=None,
         STATES=None,
-        approximator_function=None,
+        state_compressor=None,
     ):
         """
         ACTIONS:
@@ -46,14 +46,12 @@ class ModelFreeAgent:
         self.STATES = STATES
         self.STATE_LABELS = STATE_LABELS
 
-        self.approximator_function = approximator_function
-
         self.action_value_store = (
             ValueMap(f"{name}_action_values")
-            if approximator_function is None
+            if state_compressor is None
             else ValueApproximator(
                 f"{name}_action_value_approximator",
-                feature_function=approximator_function,
+                feature_function=state_compressor,
             )
         )
 
@@ -299,7 +297,7 @@ class ModelFreeAgent:
         self,
         sequence,
         discount=1,
-        lambda_value=1,
+        lambda_value=0,
         final=False,
         off_policy=False,
     ):
