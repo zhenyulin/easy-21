@@ -36,11 +36,11 @@ class ValueApproximator(ValueStore):
     #
     def features(self, input):
         features = self.feature_function(input)
-        return features if type(features) is np.ndarray else np.array(features)
+        return np.array(features)
 
     def init_weights_if_not_yet(self, features):
         if self.weights.size == 0:
-            self.weights = np.random.random_sample(features.shape)
+            self.weights = 10 * np.random.random_sample(features.shape) - 5
 
     #
     # getter functions
