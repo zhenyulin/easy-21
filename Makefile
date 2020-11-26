@@ -40,5 +40,6 @@ test-watch:
 test-coverage-watch:
 	@watchman-make -p 'src/**/*.py' -r 'make test-coverage'
 
+.PHONY: notebook
 notebook:
 	@poetry run jupyter notebook
