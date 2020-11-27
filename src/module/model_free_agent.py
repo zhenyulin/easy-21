@@ -352,7 +352,7 @@ class ModelFreeAgent:
             possible_remaining_value = (
                 greedy_policy(new_state_key, self.ACTIONS, self.action_value_store)[1]
                 if off_policy
-                else self.action_value_store.get((*new_state_key, new_action_key))
+                else self.action_value_store.get(new_action_key)
             )
             estimated_return = reward + discount * possible_remaining_value
             self.action_value_store.learn(action_key, estimated_return)
