@@ -7,10 +7,14 @@
 # - check accuracy history
 #
 # RESULTS:
-# - 1e4 EPISODES
-# - 1e5 EPISODES
+# - for 1e4 EPISODES, 2e4 EPISODES binary_feature doesn't show much difference
+#   in accuracy
+# - for 1e4 EPISODES, 2e4 EPISODES table_lookup show obviously better accuracy
+#   with more samples
 #
 # INTERPRETATION:
+# - linear combination of features has certain limit of accuracy as well as
+#   some limitation in absorb new information from more samples
 #
 # RUN:
 # %%
@@ -49,7 +53,7 @@ PLAYER.target_state_value_store.metrics_methods[
 # process
 #
 
-for EPISODES in [int(1e4), int(1e5)]:
+for EPISODES in [int(1e4), int(2e4)]:
     for feature_function in [table_lookup, full_binary_feature]:
 
         PLAYER.action_value_store.reset()
@@ -70,8 +74,8 @@ for EPISODES in [int(1e4), int(1e5)]:
 labels = [
     "1e4 episodes-table_lookup",
     "1e4 episodes-binary_feature",
-    "1e5 episodes-table_lookup",
-    "1e5 episodes-binary_feature",
+    "2e4 episodes-table_lookup",
+    "2e4 episodes-binary_feature",
 ]
 PLAYER.target_state_value_store.plot_metrics_history_stack(
     "accuracy",
