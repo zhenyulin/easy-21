@@ -84,7 +84,12 @@ class ModelFreeAgent:
     #
     # Learning Functions (Incremental Update)
     #
-    def monte_carlo_learning_offline(self, episode, discount=1):
+    def monte_carlo_learning_offline(
+        self,
+        episode,
+        discount=1,
+        defer_update=False,
+    ):
         """monte_carlo_learning
 
         - model-free learning of complete epiodes of experience
@@ -112,8 +117,11 @@ class ModelFreeAgent:
         """
         S = len(episode)
 
+        targets = []
+
         for s in range(S):
             [state_key, action_index, immediate_reward] = episode[s]
+            state_action_key = (*state_key, action_index)
 
             # the undiscounted immediate_reward
             total_return = immediate_reward
@@ -124,46 +132,55 @@ class ModelFreeAgent:
                 reward_after_n_step = episode[s + n][2]
                 total_return += (discount ** n) * reward_after_n_step
 
-            self.action_value_store.learn(
-                (*state_key, action_index),
-                total_return,
-            )
+            targets.append([state_action_key, total_return])
 
-    def temporal_difference_learning_online(
+            if not defer_update:
+                self.action_value_store.learn(state_action_key, total_return)
+
+        return targets
+
+    def temporal_difference_learning_offline(
         self,
-        sequence,
+        episode,
         discount=1,
-        final=False,
+        off_policy=False,
+        defer_update=False,
     ):
-        """temporal difference learning online
+        targets = []
 
-        - online: update on every step
-        - equivalent to offline update every step at the end of the episode
+        S = len(episode)
 
-        - one-step lookahead, use td_lambda for n steps
-        - learning from sequence of incomplete episode
-        - works in continuing (non-terminating) environment
-        - bootstrapping the return of the remaining trajectory
-        estimated by the discounted last action value
-        """
+        for s in range(S):
+            [state_key, action_index, immediate_reward] = episode[s]
+            state_action_key = (*state_key, action_index)
 
-        # unless for the final step, it needs a further step action value
-        # to estimate the return of the remaining trajectory
-        # update last step when a new step is added to form SARSA
-        if len(sequence) > 1:
-            [state_key, action_index, reward] = sequence[-2]
-            [new_state_key, new_action_index, _] = sequence[-1]
-            action_key = (*state_key, action_index)
-            new_action_key = (*new_state_key, new_action_index)
-            estimated_remaining = self.action_value_store.get(new_action_key)
-            estimated_return = reward + discount * estimated_remaining
-            self.action_value_store.learn(action_key, estimated_return)
-        # if the step is final, an extra learning is done
-        # with the final reward, no td_return here
-        if final:
-            [state_key, action_index, reward] = sequence[-1]
-            action_key = (*state_key, action_index)
-            self.action_value_store.learn(action_key, reward)
+            total_reward = immediate_reward
+            td_return = total_reward
+
+            if s + 1 < S:
+                [
+                    state_key_next,
+                    action_index_next,
+                    reward_next,
+                ] = episode[s + 1]
+
+                possible_remaining_value = (
+                    greedy_policy(
+                        state_key_next, self.ACTIONS, self.action_value_store
+                    )[1]
+                    if off_policy
+                    else self.action_value_store.get(
+                        (*state_key_next, action_index_next)
+                    )
+                )
+                td_return += discount * possible_remaining_value
+
+            targets.append([state_action_key, td_return])
+
+            if not defer_update:
+                self.action_value_store.learn(state_action_key, td_return)
+
+        return targets
 
     def forward_td_lambda_learning_offline(
         self,
@@ -172,6 +189,7 @@ class ModelFreeAgent:
         lambda_value=0,
         off_policy=False,
         defer_update=False,
+        proxy=False,
     ):
         """forward_td_lambda_learning
 
@@ -202,6 +220,18 @@ class ModelFreeAgent:
           discount {number} -- discount factor for future rewards (default: {1})
           lambda_value {number} -- default to monte carlo learning (default: {1})
         """
+        if proxy and lambda_value == 0:
+            return self.temporal_difference_learning_offline(
+                episode, discount, off_policy, defer_update
+            )
+
+        if proxy and lambda_value == 1:
+            return self.monte_carlo_learning_offline(
+                episode,
+                discount,
+                defer_update,
+            )
+
         targets = []
 
         S = len(episode)
@@ -265,6 +295,7 @@ class ModelFreeAgent:
         lambda_value=0,
         off_policy=False,
         mini_batch_size=20,
+        proxy=True,
     ):
         MINI_BATCH = len(episodes) // mini_batch_size
 
@@ -282,14 +313,57 @@ class ModelFreeAgent:
                     lambda_value=lambda_value,
                     off_policy=off_policy,
                     defer_update=True,
+                    proxy=proxy,
                 )
                 mini_batch_targets.extend(targets)
 
-            # minimising the square errors over a batch with SGD in .learn
+            # least square error over a batch with SGD in .learn
             # to avoid overfit to individual samples
             for (state_action_key, lambda_return) in mini_batch_targets:
                 self.action_value_store.learn(state_action_key, lambda_return)
 
+    def temporal_difference_learning_online(
+        self,
+        sequence,
+        discount=1,
+        off_policy=False,
+        final=False,
+    ):
+        """temporal difference learning online
+
+        - online: update on every step
+        - equivalent to offline update every step at the end of the episode
+
+        - one-step lookahead, use td_lambda for n steps
+        - learning from sequence of incomplete episode
+        - works in continuing (non-terminating) environment
+        - bootstrapping the return of the remaining trajectory
+        estimated by the discounted last action value
+        """
+
+        # unless for the final step, it needs a further step action value
+        # to estimate the return of the remaining trajectory
+        # update last step when a new step is added to form SARSA
+        if len(sequence) > 1:
+            [state_key, action_index, reward] = sequence[-2]
+            [new_state_key, new_action_index, _] = sequence[-1]
+            action_key = (*state_key, action_index)
+            new_action_key = (*new_state_key, new_action_index)
+            possible_remaining_value = (
+                greedy_policy(new_state_key, self.ACTIONS, self.action_value_store)[1]
+                if off_policy
+                else self.action_value_store.get((*new_state_key, new_action_key))
+            )
+            estimated_return = reward + discount * possible_remaining_value
+            self.action_value_store.learn(action_key, estimated_return)
+        # if the step is final, an extra learning is done
+        # with the final reward, no td_return here
+        if final:
+            [state_key, action_index, reward] = sequence[-1]
+            action_key = (*state_key, action_index)
+            self.action_value_store.learn(action_key, reward)
+
+    # OPTIONAL: TD(lambda) is not very necessary as performance not predictable
     # TODO: make backward_td_lambda(0) equivalent to td_learning
     # TODO: make step_size more testable
     # TODO: support offline, accumulate the td_target in eligibility_trace

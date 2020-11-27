@@ -40,7 +40,8 @@ class ValueApproximator(ValueStore):
 
     def init_weights_if_not_yet(self, features):
         if self.weights.size == 0:
-            self.weights = 10 * np.random.random_sample(features.shape) - 5
+            # initial weights between [-1,1)
+            self.weights = 2 * np.random.random_sample(features.shape) - 1
 
     #
     # getter functions

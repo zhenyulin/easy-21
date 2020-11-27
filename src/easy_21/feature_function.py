@@ -1,7 +1,7 @@
-from .game import ACTIONS
+from .game import ACTIONS, PLAYER_STATES
 
 
-def key_to_features(state_action):
+def overlapped_binary_feature(state_action):
     [dealer, player, action_index] = state_action
 
     dealer_feature = [
@@ -16,22 +16,7 @@ def key_to_features(state_action):
     return features
 
 
-def better_features(state_action):
-    [dealer, player, action_index] = state_action
-
-    dealer_feature = [
-        1 if dealer in range(i * 2 + 1, i * 2 + 3) else 0 for i in range(5)
-    ]
-    player_feature = [
-        1 if player in range(i * 3 + 1, i * 3 + 7) else 0 for i in range(6)
-    ]
-    action_feature = [1 if action_index == i else 0 for i in range(len(ACTIONS))]
-
-    features = [*dealer_feature, *player_feature, *action_feature]
-    return features
-
-
-def table_lookup(state_action):
+def full_binary_feature(state_action):
     [dealer, player, action_index] = state_action
 
     dealer_feature = [1 if dealer == i else 0 for i in range(1, 11)]
@@ -40,3 +25,15 @@ def table_lookup(state_action):
 
     features = [*dealer_feature, *player_feature, *action_feature]
     return features
+
+
+def table_lookup(state_action):
+    [dealer, player, action_index] = state_action
+    state_action_key = (dealer, player, action_index)
+
+    state_table = [
+        1 if state_action_key == (d, p, a) else 0
+        for a in range(len(ACTIONS))
+        for (d, p) in PLAYER_STATES
+    ]
+    return state_table
