@@ -462,14 +462,16 @@ class ModelFreeAgent:
             self.target_policy_action_store.set(state_key, target_action_index)
             self.target_state_value_store.set(state_key, target_action_value)
 
-    def plot_2d_target_value_stores(self):
+    def plot_2d_target_value_stores(self, view_init=(None, None)):
         [x_label, y_label] = (
             self.STATE_LABELS if self.STATE_LABELS is not None else [None, None]
         )
-        self.target_state_value_store.plot_2d_value(x_label, y_label)
+        self.target_state_value_store.plot_2d_value(x_label, y_label).view_init(
+            view_init[0], view_init[1]
+        )
         self.target_policy_action_store.plot_2d_value(
             x_label, y_label, z_label="Action Index"
-        )
+        ).view_init(view_init[0], view_init[1])
 
     def target_state_value_store_accuracy_to_optimal(self):
         self.set_target_value_stores()

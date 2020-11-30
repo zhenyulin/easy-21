@@ -105,6 +105,10 @@ def game(
     return state
 
 
+# NOT DO: add final flag to the last step in the episode
+# to make experience replay working with TD online
+# this would also requires to break the sequences into sarsa
+# not very useful for Easy_21 as the sequence is relatively short
 def playout(
     player_policy=lambda state_key: dummy_player_stick_policy(
         state_key, return_index=True
