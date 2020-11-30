@@ -66,8 +66,11 @@ class ValueApproximator(ValueStore):
         # we take gradient = -0.5* step_size * error * Nabla_{w}O(w) = features
         derivative = features
         error = sample_target - value
-        gradient = step_size * error * derivative
-        self.weights += gradient
+        gradient = error * derivative
+        learning_rate = (
+            step_size() if isinstance(type(step_size), type(lambda: 0)) else step_size
+        )
+        self.weights += learning_rate * gradient
 
     def learn_with_eligibility_trace(
         self,

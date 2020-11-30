@@ -296,6 +296,7 @@ class ModelFreeAgent:
         off_policy=False,
         mini_batch_size=20,
         proxy=True,
+        step_size=0.01,
     ):
         MINI_BATCH = len(episodes) // mini_batch_size
 
@@ -320,7 +321,11 @@ class ModelFreeAgent:
             # least square error over a batch with SGD in .learn
             # to avoid overfit to individual samples
             for (state_action_key, lambda_return) in mini_batch_targets:
-                self.action_value_store.learn(state_action_key, lambda_return)
+                self.action_value_store.learn(
+                    state_action_key,
+                    lambda_return,
+                    step_size=step_size,
+                )
 
     def temporal_difference_learning_online(
         self,
