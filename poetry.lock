@@ -426,6 +426,14 @@ pyparsing = ">=2.0.3,<2.0.4 || >2.0.4,<2.1.2 || >2.1.2,<2.1.6 || >2.1.6"
 python-dateutil = ">=2.1"
 
 [[package]]
+category = "main"
+description = "A tiny scalar-valued autograd engine with a small PyTorch-like neural network library on top."
+name = "micrograd"
+optional = false
+python-versions = ">=3.6"
+version = "0.1.0"
+
+[[package]]
 category = "dev"
 description = "The fastest markdown parser in pure Python"
 name = "mistune"
@@ -929,7 +937,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pytest (>=3.5,<3.7.3 || >3.7.3)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pytest-cov", "jaraco.test (>=3.2.0)", "jaraco.itertools", "func-timeout", "pytest-black (>=0.3.7)", "pytest-mypy"]
 
 [metadata]
-content-hash = "c7cb1a700138327b4722dc052b97a21460f187a035591929244c10031fd3380c"
+content-hash = "d2460e23f39818e69eb1bad5563019b21f18b3c094717b70ca737eca442339f6"
 python-versions = "^3.6.10"
 
 [metadata.files]
@@ -1233,6 +1241,10 @@ matplotlib = [
     {file = "matplotlib-3.3.3-pp37-pypy37_pp73-macosx_10_9_x86_64.whl", hash = "sha256:746897fbd72bd462b888c74ed35d812ca76006b04f717cd44698cdfc99aca70d"},
     {file = "matplotlib-3.3.3-pp37-pypy37_pp73-manylinux2010_x86_64.whl", hash = "sha256:5ed3d3342698c2b1f3651f8ea6c099b0f196d16ee00e33dc3a6fee8cb01d530a"},
     {file = "matplotlib-3.3.3.tar.gz", hash = "sha256:b1b60c6476c4cfe9e5cf8ab0d3127476fd3d5f05de0f343a452badaad0e4bdec"},
+]
+micrograd = [
+    {file = "micrograd-0.1.0-py3-none-any.whl", hash = "sha256:47d756d92043c7d7ef55372640dc1549780a8c22806b3a11cb3d4efc5937a4ae"},
+    {file = "micrograd-0.1.0.tar.gz", hash = "sha256:81797b796bef809fb1ac3fd83a7e01e007aecb8d056fba07c0e24931e043845d"},
 ]
 mistune = [
     {file = "mistune-0.8.4-py2.py3-none-any.whl", hash = "sha256:88a1051873018da288eee8538d476dffe1262495144b33ecb586c4ab266bb8d4"},
