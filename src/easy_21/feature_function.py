@@ -1,6 +1,37 @@
 from .game import ACTIONS, PLAYER_STATES
 
 
+def numeric_feature(state_action):
+    [dealer, player, action_index] = state_action
+    state_features = [(dealer - 5.5) / 4.5, (player - 11) / 10]
+    action_feature = [(action_index - 0.5) / 0.5]
+    bias = [1]
+    return [*state_features, *action_feature, *bias]
+
+
+def numeric_binary_feature(state_action):
+    [dealer, player, action_index] = state_action
+    state_features = [(dealer - 5.5) / 4.5, (player - 11) / 10]
+    action_feature = [1 if action_index == i else 0 for i in range(len(ACTIONS))]
+    bias = [1]
+    return [*state_features, *action_feature, *bias]
+
+
+def bounded_numeric_binary_feature(state_action):
+    [dealer, player, action_index] = state_action
+    state_features = [
+        (dealer - 5.5) / 4.5,  # [1,10]
+        (21 - dealer - 15.5) / 4.5,  # [11,20]
+        (player - 11) / 10,  # [1,21]
+        (21 - player - 10) / 10,  # [0,20]
+        (player - 10 - 1) / 10,  # [-9, 11]
+        (dealer - player + 5.5) / 14.5,  # [-20,9]
+    ]
+    action_feature = [1 if action_index == i else 0 for i in range(len(ACTIONS))]
+    bias = [1]
+    return [*state_features, *action_feature, *bias]
+
+
 def overlapped_binary_feature(state_action):
     [dealer, player, action_index] = state_action
 
