@@ -74,7 +74,7 @@ PLAYER = ModelFreeAgent(
     ACTIONS,
     STATE_LABELS,
     PLAYER_STATES,
-    state_compressor=table_lookup,
+    state_action_parser=table_lookup,
 )
 PLAYER.load_optimal_state_values()
 

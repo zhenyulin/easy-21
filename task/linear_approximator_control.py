@@ -53,7 +53,7 @@ PLAYER = ModelFreeAgent(
     ACTIONS,
     STATE_LABELS,
     PLAYER_STATES,
-    state_compressor=full_binary_feature,
+    state_action_parser=full_binary_feature,
 )
 PLAYER.load_optimal_state_values()
 

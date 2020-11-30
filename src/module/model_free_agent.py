@@ -1,5 +1,6 @@
 from src.lib.value_map import ValueMap
 from src.lib.value_approximator import ValueApproximator
+from src.lib.value_network import ValueNetwork
 from src.lib.eligibility_trace import EligibilityTrace
 from src.lib.policy import e_greedy_policy, greedy_policy
 
@@ -25,7 +26,8 @@ class ModelFreeAgent:
         ACTIONS,
         STATE_LABELS=None,
         STATES=None,
-        state_compressor=None,
+        state_action_parser=None,
+        network_size=None,
     ):
         """
         ACTIONS:
@@ -48,10 +50,18 @@ class ModelFreeAgent:
 
         self.action_value_store = (
             ValueMap(f"{name}_action_values")
-            if state_compressor is None
-            else ValueApproximator(
-                f"{name}_action_value_approximator",
-                feature_function=state_compressor,
+            if state_action_parser is None
+            else (
+                ValueApproximator(
+                    f"{name}_action_value_approximator",
+                    feature_function=state_action_parser,
+                )
+                if network_size is None
+                else ValueNetwork(
+                    f"{name}_action_value_network",
+                    input_parser=state_action_parser,
+                    network_size=network_size,
+                )
             )
         )
 
