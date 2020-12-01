@@ -5,11 +5,12 @@ description = ""
 authors = ["Zhenyu Lin <zhenyu.lyn@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.6.10"
+python = "^3.8.6"
 pytest-timeout = "^1.4.2"
 tqdm = "^4.51.0"
 matplotlib = "^3.3.2"
 micrograd = "^0.1.0"
+tinygrad = "^0.3.0"
 
 [tool.poetry.dev-dependencies]
 ipykernel = "^5.3.0"
