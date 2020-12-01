@@ -44,12 +44,14 @@ PLAYER = ModelFreeAgent("player", ACTIONS)
 PLAYER.load_optimal_state_values()
 PLAYER.true_action_value_store.load("../output/player_true_action_values.json")
 
-PLAYER.target_state_value_store.metrics_methods[
-    "accuracy"
-] = PLAYER.target_state_value_store_accuracy_to_optimal
-PLAYER.action_value_store.metrics_methods[
-    "accuracy"
-] = PLAYER.action_value_store_accuracy_to_true
+PLAYER.target_state_value_store.metrics.register(
+    "accuracy",
+    PLAYER.target_state_value_store_accuracy_to_optimal,
+)
+PLAYER.action_value_store.metrics.register(
+    "accuracy",
+    PLAYER.action_value_store_accuracy_to_true,
+)
 
 #
 # process
@@ -71,17 +73,18 @@ for off_policy in tqdm(off_policy_options):
                 ),
             )
 
-        PLAYER.target_state_value_store.record("accuracy", log=False)
-        PLAYER.action_value_store.record("accuracy", log=False)
+        PLAYER.target_state_value_store.metrics.record("accuracy")
+        PLAYER.action_value_store.metrics.record("accuracy")
 
-    PLAYER.target_state_value_store.stack_metrics_history("accuracy")
-    PLAYER.action_value_store.stack_metrics_history("accuracy")
+    PLAYER.target_state_value_store.metrics.stack("accuracy")
+    PLAYER.action_value_store.metrics.stack("accuracy")
 
-PLAYER.target_state_value_store.plot_metrics_history_stack(
+labels = ["off_policy", "on_policy"]
+PLAYER.target_state_value_store.metrics.plot_history_stack(
     "accuracy",
-    labels=["off_policy", "on_policy"],
+    labels=labels,
 )
-PLAYER.action_value_store.plot_metrics_history_stack(
+PLAYER.action_value_store.metrics.plot_history_stack(
     "accuracy",
-    labels=["off_policy", "on_policy"],
+    labels=labels,
 )

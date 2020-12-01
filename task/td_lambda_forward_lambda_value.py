@@ -46,12 +46,14 @@ EPISODES = int(1e5)
 PLAYER = ModelFreeAgent("player", ACTIONS)
 PLAYER.load_optimal_state_values()
 
-PLAYER.target_state_value_store.metrics_methods[
-    "accuracy"
-] = PLAYER.target_state_value_store_accuracy_to_optimal
-PLAYER.target_state_value_store.metrics_methods[
-    "final_accuracy"
-] = PLAYER.target_state_value_store_accuracy_to_optimal
+PLAYER.target_state_value_store.metrics.register(
+    "accuracy",
+    PLAYER.target_state_value_store_accuracy_to_optimal,
+)
+PLAYER.target_state_value_store.metrics.register(
+    "final_accuracy",
+    PLAYER.target_state_value_store_accuracy_to_optimal,
+)
 
 #
 # process
@@ -64,6 +66,7 @@ for _ in range(2):
     for lambda_value in tqdm(lambda_value_range):
 
         PLAYER.action_value_store.reset()
+
         for _ in range(BATCH):
             for _ in range(EPISODES):
                 playout(
@@ -73,17 +76,17 @@ for _ in range(2):
                     ),
                 )
 
-            PLAYER.target_state_value_store.record("accuracy")
+            PLAYER.target_state_value_store.metrics.record("accuracy")
 
-        PLAYER.target_state_value_store.stack_metrics_history("accuracy")
+        PLAYER.target_state_value_store.metrics.stack("accuracy")
         PLAYER.target_state_value_store.record("final_accuracy")
 
-    PLAYER.target_state_value_store.stack_metrics_history("final_accuracy")
+    PLAYER.target_state_value_store.metrics.stack("final_accuracy")
 
-PLAYER.target_state_value_store.plot_metrics_history_stack(
+PLAYER.target_state_value_store.metrics.plot_history_stack(
     "final_accuracy", x=lambda_value_range
 )
-PLAYER.target_state_value_store.plot_metrics_history_stack(
+PLAYER.target_state_value_store.metrics.plot_history_stack(
     "accuracy",
     labels=[f"{r:.1f}" for r in [*lambda_value_range, *lambda_value_range]],
 )

@@ -45,9 +45,10 @@ PLAYER = ModelFreeAgent(
 )
 PLAYER.load_optimal_state_values()
 
-PLAYER.target_state_value_store.metrics_methods[
-    "accuracy"
-] = PLAYER.target_state_value_store_accuracy_to_optimal
+PLAYER.target_state_value_store.metrics.register(
+    "accuracy",
+    PLAYER.target_state_value_store_accuracy_to_optimal,
+)
 
 #
 # process
@@ -67,9 +68,9 @@ for EPISODES in [int(1e4), int(2e4)]:
             shuffle(experiences)
             PLAYER.forward_td_lambda_learning_offline_batch(experiences)
 
-            PLAYER.target_state_value_store.record("accuracy", log=False)
+            PLAYER.target_state_value_store.metrics.record("accuracy")
 
-        PLAYER.target_state_value_store.stack_metrics_history("accuracy")
+        PLAYER.target_state_value_store.metrics.stack("accuracy")
 
 labels = [
     "1e4 episodes-table_lookup",
@@ -77,7 +78,7 @@ labels = [
     "2e4 episodes-table_lookup",
     "2e4 episodes-binary_feature",
 ]
-PLAYER.target_state_value_store.plot_metrics_history_stack(
+PLAYER.target_state_value_store.metrics.plot_history_stack(
     "accuracy",
     labels=labels,
 )

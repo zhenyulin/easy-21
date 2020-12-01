@@ -20,16 +20,13 @@ class ValueApproximator(ValueStore):
     def __init__(self, name, feature_function=lambda x: x):
         ValueStore.__init__(self, name)
 
-        self.name = name
         self.feature_function = feature_function
 
         self.weights = np.array([])
         self._weights = np.array([])
 
-        self.metrics_methods = {
-            "diff": self.diff,
-            "compare": self.compare,
-        }
+        self.metrics.register("diff", self.diff)
+        self.metrics.register("compare", self.compare)
 
     #
     # utility functions
@@ -91,12 +88,17 @@ class ValueApproximator(ValueStore):
     #
     # metrics functions
     #
-    def diff(self):
+    def diff(self, backup=True):
         if self._weights.size == 0:
             self._weights = np.zeros_like(self.weights)
+
         mse = (np.square(self.weights - self._weights)).mean(axis=0)
         rmse = np.sqrt(mse)
         value_range = np.amax(self.weights) - min(np.amin(self.weights), 0)
+
+        if backup:
+            self.backup()
+
         return rmse / value_range
 
     def compare(self, value_map):

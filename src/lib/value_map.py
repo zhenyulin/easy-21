@@ -29,10 +29,8 @@ class ValueMap(ValueStore):
         self.data = {}
         self._data = {}
 
-        self.metrics_methods = {
-            "diff": self.diff,
-            "compare": self.compare,
-        }
+        self.metrics.register("diff", self.diff)
+        self.metrics.register("compare", self.compare)
 
     #
     # utility functions
@@ -119,7 +117,7 @@ class ValueMap(ValueStore):
     #
     # metrics functions
     #
-    def diff(self):
+    def diff(self, backup=True):
         sq_error = 0
         values = [d["value"] for d in self.data.values()]
         value_range = max(values) - min([*values, 0])
@@ -130,6 +128,9 @@ class ValueMap(ValueStore):
 
             error = new_value - old_value
             sq_error += error ** 2
+
+        if backup:
+            self.backup()
 
         return sqrt(sq_error / len(self.data.keys())) / value_range
 

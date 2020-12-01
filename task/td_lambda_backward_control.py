@@ -17,28 +17,26 @@ from src.module.model_free_agent import ModelFreeAgent
 
 from src.easy_21.game import playout, ACTIONS
 
+BATCH = 10
 EPISODES = int(1e3)
 
 PLAYER = ModelFreeAgent("player", ACTIONS)
 PLAYER.load_optimal_state_values()
 
-PLAYER.target_state_value_store.learning_progress = (
-    PLAYER.compare_learning_progress_with_optimal
-)
-PLAYER.target_state_value_store.lambda_value_performance = (
-    PLAYER.compare_learning_progress_with_optimal
+PLAYER.target_state_value_store.metrics.register(
+    "accuracy",
+    PLAYER.compare_learning_progress_with_optimal,
 )
 
 
-def test_backward_sarsa_lambda():
+lambda_value_range = arange(0, 1.1, 0.1)
 
-    lambda_value_range = arange(0, 1.1, 0.1)
+for lambda_value in tqdm(lambda_value_range):
+    print("lambda_value: ", lambda_value)
 
-    for lambda_value in tqdm(lambda_value_range):
-        print("lambda_value: ", lambda_value)
+    PLAYER.action_value_store.reset()
 
-        PLAYER.action_value_store.reset()
-
+    for _ in range(BATCH):
         for _ in range(EPISODES):
             playout(
                 player_policy=PLAYER.e_greedy_policy,
@@ -47,27 +45,10 @@ def test_backward_sarsa_lambda():
                 ),
             )
 
-            if lambda_value in [0.0, 1.0] and _ % 10 == 0:
-                PLAYER.target_state_value_store.record(
-                    ["learning_progress"],
-                    log=False,
-                )
+        PLAYER.target_state_value_store.metrics.record("accuracy")
 
-        if lambda_value in [0.0, 1.0]:
-            PLAYER.target_state_value_store.plot_metrics_history(
-                "learning_progress",
-                title=f"learning progress at {EPISODES:.0e} episodes - lambda_value: {lambda_value}",
-            )
-            PLAYER.target_state_value_store.reset_metrics_history("learning_progress")
+    PLAYER.target_state_value_store.metrics.stack("accuracy")
 
-        PLAYER.target_state_value_store.record("lambda_value_performance")
-
-    PLAYER.target_state_value_store.plot_metrics_history(
-        "lambda_value_performance", x=lambda_value_range
-    )
-
-
-try:
-    test_backward_sarsa_lambda()
-except Exception as e:
-    print(e)
+PLAYER.target_state_value_store.metrics.plot_history_stack(
+    "accuracy", labels=lambda_value_range
+)

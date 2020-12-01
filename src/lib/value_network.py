@@ -26,17 +26,14 @@ class ValueNetwork(ValueStore):
     ):
         ValueStore.__init__(self, name)
 
-        self.name = name
         self.input_parser = input_parser
-
         self.network_size = network_size
+
         self.network = None
         self._network = None
 
-        self.metrics_methods = {
-            "diff": self.diff,
-            "compare": self.compare,
-        }
+        self.metrics.register("diff", self.diff)
+        self.metrics.register("compare", self.compare)
 
     #
     # utility functions
@@ -86,7 +83,7 @@ class ValueNetwork(ValueStore):
     #
     # metrics functions
     #
-    def diff(self):
+    def diff(self, backup=True):
         if self._network is None:
             return 1
 
@@ -95,6 +92,10 @@ class ValueNetwork(ValueStore):
         mse = (np.square(parameters - _parameters)).mean(axis=0)
         rmse = np.sqrt(mse)
         value_range = np.amax(parameters) - min(np.amin(parameters), 0)
+
+        if backup:
+            self.backup()
+
         return rmse / value_range
 
     def compare(self, value_map):

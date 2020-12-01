@@ -55,9 +55,10 @@ PLAYER = ModelFreeAgent(
 )
 PLAYER.load_optimal_state_values()
 
-PLAYER.target_state_value_store.metrics_methods[
-    "accuracy"
-] = PLAYER.target_state_value_store_accuracy_to_optimal
+PLAYER.target_state_value_store.metrics.register(
+    "accuracy",
+    PLAYER.target_state_value_store_accuracy_to_optimal,
+)
 
 #
 # process
@@ -84,9 +85,9 @@ for feature_function in [
             experiences, step_size=LEARNING_RATE
         )
 
-        PLAYER.target_state_value_store.record("accuracy", log=False)
+        PLAYER.target_state_value_store.metrics.record("accuracy")
 
-    PLAYER.target_state_value_store.stack_metrics_history("accuracy")
+    PLAYER.target_state_value_store.metrics.stack("accuracy")
 
     PLAYER.set_target_value_stores()
     PLAYER.plot_2d_target_value_stores()
@@ -101,7 +102,7 @@ labels = [
     "overlapped_binary_feature",
     "full_binary_feature",
 ]
-PLAYER.target_state_value_store.plot_metrics_history_stack(
+PLAYER.target_state_value_store.metrics.plot_history_stack(
     "accuracy",
     labels=labels,
 )

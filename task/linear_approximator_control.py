@@ -57,9 +57,10 @@ PLAYER = ModelFreeAgent(
 )
 PLAYER.load_optimal_state_values()
 
-PLAYER.target_state_value_store.metrics_methods[
-    "accuracy"
-] = PLAYER.target_state_value_store_accuracy_to_optimal
+PLAYER.target_state_value_store.metrics.register(
+    "accuracy",
+    PLAYER.target_state_value_store_accuracy_to_optimal,
+)
 
 #
 # process
@@ -74,13 +75,13 @@ experiences = [
 ]
 
 for _ in trange(EPOCH):
-    PLAYER.target_state_value_store.record("accuracy", log=False)
+    PLAYER.target_state_value_store.metrics.record("accuracy")
 
     shuffle(experiences)
     PLAYER.forward_td_lambda_learning_offline_batch(experiences)
 
 
-PLAYER.target_state_value_store.stack_metrics_history("accuracy")
+PLAYER.target_state_value_store.metrics.stack("accuracy")
 
 # sample_learn
 PLAYER.action_value_store.reset()
@@ -94,12 +95,12 @@ experiences = [
 ]
 
 for _ in trange(EPOCH):
-    PLAYER.target_state_value_store.record("accuracy", log=False)
+    PLAYER.target_state_value_store.metrics.record("accuracy")
 
     shuffle(experiences)
     PLAYER.forward_td_lambda_learning_offline_batch(experiences)
 
-PLAYER.target_state_value_store.stack_metrics_history("accuracy")
+PLAYER.target_state_value_store.metrics.stack("accuracy")
 
 # sample_batch_learn
 PLAYER.action_value_store.reset()
@@ -112,13 +113,13 @@ for i in trange(EPISODES):
         PLAYER.forward_td_lambda_learning_offline_batch(experiences[-MINI_BATCH_SIZE:])
 
 for _ in trange(EPOCH):
-    PLAYER.target_state_value_store.record("accuracy", log=False)
+    PLAYER.target_state_value_store.metrics.record("accuracy")
 
     shuffle(experiences)
     PLAYER.forward_td_lambda_learning_offline_batch(experiences)
 
 
-PLAYER.target_state_value_store.stack_metrics_history("accuracy")
+PLAYER.target_state_value_store.metrics.stack("accuracy")
 
 # sample_batch_learn_epoch
 PLAYER.action_value_store.reset()
@@ -135,13 +136,13 @@ for i in trange(EPISODES):
             )
 
 for _ in trange(EPOCH):
-    PLAYER.target_state_value_store.record("accuracy", log=False)
+    PLAYER.target_state_value_store.metrics.record("accuracy")
 
     shuffle(experiences)
     PLAYER.forward_td_lambda_learning_offline_batch(experiences)
 
 
-PLAYER.target_state_value_store.stack_metrics_history("accuracy")
+PLAYER.target_state_value_store.metrics.stack("accuracy")
 
 # sample_batch_learn_epoch_more
 PLAYER.action_value_store.reset()
@@ -158,13 +159,13 @@ for i in trange(EPISODES):
             )
 
 for _ in trange(EPOCH):
-    PLAYER.target_state_value_store.record("accuracy", log=False)
+    PLAYER.target_state_value_store.metrics.record("accuracy")
 
     shuffle(experiences)
     PLAYER.forward_td_lambda_learning_offline_batch(experiences)
 
 
-PLAYER.target_state_value_store.stack_metrics_history("accuracy")
+PLAYER.target_state_value_store.metrics.stack("accuracy")
 
 # plot result
 labels = [
@@ -174,7 +175,7 @@ labels = [
     "sample_batch_learn_epoch",
     "sample_batch_learn_epoch_more",
 ]
-PLAYER.target_state_value_store.plot_metrics_history_stack(
+PLAYER.target_state_value_store.metrics.plot_history_stack(
     "accuracy",
     labels=labels,
 )

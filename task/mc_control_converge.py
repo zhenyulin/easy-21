@@ -72,19 +72,19 @@ for n in trange(BATCH, leave=True):
 
     PLAYER.set_target_value_stores()
 
-    if PLAYER.target_policy_action_store.record_and_check_convergence("diff"):
+    if PLAYER.target_policy_action_store.metrics.record_converged("diff"):
         convergence["target_policy_action_store"].append(n)
 
-    if PLAYER.target_state_value_store.record_and_check_convergence("diff"):
+    if PLAYER.target_state_value_store.metrics.record_converged("diff"):
         convergence["target_state_value_store"].append(n)
 
-    if PLAYER.action_value_store.record_and_check_convergence("diff"):
+    if PLAYER.action_value_store.metrics.record_converged("diff"):
         convergence["action_value_store"].append(n)
 
 pprint(convergence)
-PLAYER.target_policy_action_store.plot_metrics_history("diff")
-PLAYER.target_state_value_store.plot_metrics_history("diff")
-PLAYER.action_value_store.plot_metrics_history("diff")
+PLAYER.target_policy_action_store.metrics.plot_history("diff")
+PLAYER.target_state_value_store.metrics.plot_history("diff")
+PLAYER.action_value_store.metrics.plot_history("diff")
 
 #
 # extra:

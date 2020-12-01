@@ -78,9 +78,10 @@ PLAYER = ModelFreeAgent(
 )
 PLAYER.load_optimal_state_values()
 
-PLAYER.target_state_value_store.metrics_methods[
-    "accuracy"
-] = PLAYER.target_state_value_store_accuracy_to_optimal
+PLAYER.target_state_value_store.metrics.register(
+    "accuracy",
+    PLAYER.target_state_value_store_accuracy_to_optimal,
+)
 
 #
 # process
@@ -109,9 +110,9 @@ for feature_function in feature_function_options:
                 off_policy=off_policy,
             )
 
-            PLAYER.target_state_value_store.record("accuracy", log=False)
+            PLAYER.target_state_value_store.metrics.record("accuracy")
 
-        PLAYER.target_state_value_store.stack_metrics_history("accuracy")
+        PLAYER.target_state_value_store.metrics.stack("accuracy")
 
 labels = [
     "mc-table_lookup",
@@ -121,7 +122,7 @@ labels = [
     "td-binary_feature",
     "qlearning-binary_feature",
 ]
-PLAYER.target_state_value_store.plot_metrics_history_stack(
+PLAYER.target_state_value_store.metrics.plot_history_stack(
     "accuracy",
     labels=labels,
 )

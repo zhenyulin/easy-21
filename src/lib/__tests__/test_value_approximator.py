@@ -11,7 +11,7 @@ class TestInit:
         assert value_approximator.feature_function(1) == 1
         assert type(value_approximator.weights) is np.ndarray
         assert type(value_approximator._weights) is np.ndarray
-        assert value_approximator.metrics_history == {}
+        assert value_approximator.metrics.history == {}
 
     def test_custom_feature_function(self):
         def feature_function(input):
@@ -176,6 +176,6 @@ def test_record():
     value_approximator.weights = np.array([1.0, 1.0, 1.0])
     value_approximator.backup()
     value_approximator.weights = np.array([1.2, 0.8, 1.2])
-    value_approximator.record("diff", log=False)
-    assert np.allclose(value_approximator.metrics_history["diff"], [0.2 / 1.2])
+    value_approximator.metrics.record("diff", log=False)
+    assert np.allclose(value_approximator.metrics.history["diff"], [0.2 / 1.2])
     assert np.allclose(value_approximator.weights, value_approximator._weights)

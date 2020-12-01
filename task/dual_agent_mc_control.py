@@ -52,8 +52,8 @@ for _ in trange(BATCH):
             dealer_offline_learning=DEALER.monte_carlo_learning_offline,
         )
 
-    PLAYER.action_value_store.record("diff", log=False)
-    DEALER.action_value_store.record("diff", log=False)
+    PLAYER.action_value_store.metrics.record("diff")
+    DEALER.action_value_store.metrics.record("diff")
 
 PLAYER.set_target_value_stores()
 PLAYER.plot_2d_target_value_stores(view_init=(30, 30))
@@ -61,5 +61,5 @@ PLAYER.plot_2d_target_value_stores(view_init=(30, 30))
 DEALER.set_target_value_stores()
 DEALER.plot_2d_target_value_stores(view_init=(30, 30))
 
-PLAYER.action_value_store.plot_metrics_history("diff")
-DEALER.action_value_store.plot_metrics_history("diff")
+PLAYER.action_value_store.metrics.plot_history("diff")
+DEALER.action_value_store.metrics.plot_history("diff")
