@@ -1,23 +1,18 @@
 # TASK:
-# - check value_network, mc/td ~ convergence
+# - check value_network, value_approximator (linear) ~ convergence
 #
 # PROCESS;
+# - use network_size of [1], [4,1], [4,2,1]
 # - sample EPISODES(1e4) experiences
 # - replay experience of EPOCH(20) to fit with value network
 #
 # RESULTS:
-# 1st run
-# - mc shows the best final accuracy ~ 0.175
-# - td on-policy shows the second best accuracy ~ 0.25
-# - qlearning(td off-policy) shows the worst accuracy ~ 0.325
-# 2nd run
-# - qlearning shows the best final accuracy ~ 0.15
-# - mc shows the second best accuracy ~ 0.20
-# - td on-policy shows the worst accuracy ~ 0.22
+# - 1-layer shows average accuracy ~ 0.28, completed in 30s
+# - 2-layer MLP shows average accuracy ~ 0.30, completed in 30s
+# - 3-layer MLP shows average accuracy ~ 0.26, completed in 12s
 #
 # INTERPRETATION:
-# - using neural networks sampling is more efficient here
-# - TODO: compare with linear approximator
+# - performance of the network structure depends on the use case
 #
 # RUN:
 # %%
@@ -38,7 +33,6 @@ from src.easy_21.feature_function import numeric_feature
 #
 
 EPISODES = int(1e4)
-
 EPOCH = 20
 
 PLAYER = ModelFreeAgent(
@@ -47,10 +41,9 @@ PLAYER = ModelFreeAgent(
     STATE_LABELS,
     PLAYER_STATES,
     state_action_parser=numeric_feature,
-    network_size=[4, 2, 1],
+    network_size=[1],
 )
 PLAYER.load_optimal_state_values()
-
 PLAYER.target_state_value_store.metrics.register(
     "accuracy",
     PLAYER.target_state_value_store_accuracy_to_optimal,
@@ -60,43 +53,30 @@ PLAYER.target_state_value_store.metrics.register(
 # process
 #
 
-experiences = [
-    playout(player_policy=PLAYER.e_greedy_policy)[0] for _ in trange(EPISODES)
-]
+network_sizes = [[1], [4, 1], [4, 2, 1]]
+labels = ["linear", "2-layer MLP", "3-layer MLP"]
 
-configs = [
-    (0, True),
-    (0, False),
-    (1, False),
-]
-labels = [
-    "qlearning",
-    "td-on_policy",
-    "mc",
-]
+for network_size in network_sizes:
+    PLAYER.action_value_store.reset()
 
-for (lambda_value, off_policy) in configs:
+    PLAYER.action_value_store.network_sizes = network_size
+
+    experiences = [
+        playout(player_policy=PLAYER.e_greedy_policy)[0] for _ in trange(EPISODES)
+    ]
 
     for _ in trange(EPOCH):
         shuffle(experiences)
-
         PLAYER.forward_td_lambda_learning_offline_batch(
             experiences,
-            lambda_value=lambda_value,
-            off_policy=off_policy,
             step_size=0.001,
         )
 
         PLAYER.target_state_value_store.metrics.record("accuracy")
 
     PLAYER.target_state_value_store.metrics.stack("accuracy")
-    PLAYER.action_value_store.reset()
 
 PLAYER.target_state_value_store.metrics.plot_history_stack(
     "accuracy",
     labels=labels,
 )
-
-# %%
-PLAYER.set_target_value_stores()
-PLAYER.plot_2d_target_value_stores()
