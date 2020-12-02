@@ -1,5 +1,5 @@
 [[package]]
-category = "dev"
+category = "main"
 description = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
 name = "appdirs"
 optional = false
@@ -171,7 +171,7 @@ version = "0.10.0"
 six = "*"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Decorators for Humans"
 name = "decorator"
 optional = false
@@ -700,6 +700,24 @@ version = "2.7.2"
 
 [[package]]
 category = "main"
+description = "Python wrapper for OpenCL"
+name = "pyopencl"
+optional = false
+python-versions = "~=3.6"
+version = "2020.3.1"
+
+[package.dependencies]
+appdirs = ">=1.4.0"
+decorator = ">=3.2.0"
+numpy = "*"
+pytools = ">=2017.6"
+
+[package.extras]
+oclgrind = ["oclgrind_binary_distribution (>=18.3)"]
+pocl = ["pocl_binary_distribution (>=1.2)"]
+
+[[package]]
+category = "main"
 description = "Python parsing module"
 name = "pyparsing"
 optional = false
@@ -772,6 +790,20 @@ version = "2.8.1"
 
 [package.dependencies]
 six = ">=1.5"
+
+[[package]]
+category = "main"
+description = "A collection of tools for Python"
+name = "pytools"
+optional = false
+python-versions = "~=3.6"
+version = "2020.4.3"
+
+[package.dependencies]
+appdirs = ">=1.4.0"
+decorator = ">=3.2.0"
+numpy = ">=1.6.0"
+six = ">=1.8.0"
 
 [[package]]
 category = "dev"
@@ -962,7 +994,7 @@ python-versions = "*"
 version = "0.5.1"
 
 [metadata]
-content-hash = "82c5446cb86490636f2dc2aa8e62aa41bac3cf98483c042ea3fbab126044ddb9"
+content-hash = "08bd2ddead05e48ad9d5920a615507716d703a3dc52a875d4235eddecf9a246d"
 python-versions = "^3.8.6"
 
 [metadata.files]
@@ -1424,6 +1456,12 @@ pygments = [
     {file = "Pygments-2.7.2-py3-none-any.whl", hash = "sha256:88a0bbcd659fcb9573703957c6b9cff9fab7295e6e76db54c9d00ae42df32773"},
     {file = "Pygments-2.7.2.tar.gz", hash = "sha256:381985fcc551eb9d37c52088a32914e00517e57f4a21609f48141ba08e193fa0"},
 ]
+pyopencl = [
+    {file = "pyopencl-2020.3.1-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:121a4486af3a04d1e6fb739ffb92e1d1b5e689860984e3f58777d62e1f44aa67"},
+    {file = "pyopencl-2020.3.1-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:ab9e8f9f2fc9e8f795985225de47057e936b5d9bb61442d2a23f0ad7a38520a7"},
+    {file = "pyopencl-2020.3.1-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:19703da491206f697cfcff13491f12e8e044fe7e79b177272d2cb07ae4c3d1ad"},
+    {file = "pyopencl-2020.3.1.tar.gz", hash = "sha256:abc689307cf34d3dcc94d43815f64e2265469b50ecce6c903a3180589666fb36"},
+]
 pyparsing = [
     {file = "pyparsing-2.4.7-py2.py3-none-any.whl", hash = "sha256:ef9d7589ef3c200abe66653d3f1ab1033c3c419ae9b9bdb1240a85b024efc88b"},
     {file = "pyparsing-2.4.7.tar.gz", hash = "sha256:c203ec8783bf771a155b207279b9bccb8dea02d8f0c9e5f8ead507bc3246ecc1"},
@@ -1446,6 +1484,9 @@ pytest-timeout = [
 python-dateutil = [
     {file = "python-dateutil-2.8.1.tar.gz", hash = "sha256:73ebfe9dbf22e832286dafa60473e4cd239f8592f699aa5adaf10050e6e1823c"},
     {file = "python_dateutil-2.8.1-py2.py3-none-any.whl", hash = "sha256:75bb3f31ea686f1197762692a9ee6a7550b59fc6ca3a1f4b5d7e32fb98e2da2a"},
+]
+pytools = [
+    {file = "pytools-2020.4.3.tar.gz", hash = "sha256:21aa1fd942bc3bc54c8ae3b5e60c1f771e6db0817b7402fd802aa5964f20e629"},
 ]
 pywin32 = [
     {file = "pywin32-228-cp27-cp27m-win32.whl", hash = "sha256:37dc9935f6a383cc744315ae0c2882ba1768d9b06700a70f35dc1ce73cd4ba9c"},
