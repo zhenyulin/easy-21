@@ -87,7 +87,7 @@ class Metrics:
             x = np.arange(1, len(y) + 1, 1)
 
         if len(x) < 50:
-            plt.xticks(x)
+            plt.xticks(range(len(x)), x)
 
         default_title = f"{self.scope} - metrics history - {name}"
         plt.title(default_title if title is None else title)
