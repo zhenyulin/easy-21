@@ -40,8 +40,9 @@ PLAYER = ModelFreeAgent(
     ACTIONS,
     STATE_LABELS,
     PLAYER_STATES,
-    state_action_parser=numeric_feature,
-    network_size=[1],
+    action_value_type="network",
+    action_key_parser=numeric_feature,
+    action_value_network_size=[1],
 )
 PLAYER.load_optimal_state_values()
 PLAYER.target_state_value_store.metrics.register(

@@ -74,7 +74,8 @@ PLAYER = ModelFreeAgent(
     ACTIONS,
     STATE_LABELS,
     PLAYER_STATES,
-    state_action_parser=table_lookup,
+    action_value_type="approximator",
+    action_key_parser=table_lookup,
 )
 PLAYER.load_optimal_state_values()
 

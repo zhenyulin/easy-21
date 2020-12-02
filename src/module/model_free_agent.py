@@ -1,6 +1,7 @@
 from src.lib.value_map import ValueMap
 from src.lib.value_approximator import ValueApproximator
 from src.lib.value_network import ValueNetwork
+from src.lib.value_network_gpu import ValueNetworkGPU
 from src.lib.eligibility_trace import EligibilityTrace
 from src.lib.policy import e_greedy_policy, greedy_policy
 
@@ -26,8 +27,9 @@ class ModelFreeAgent:
         ACTIONS,
         STATE_LABELS=None,
         STATES=None,
-        state_action_parser=None,
-        network_size=None,
+        action_value_type="map",
+        action_value_network_size=None,
+        action_key_parser=None,
     ):
         """
         ACTIONS:
@@ -48,26 +50,36 @@ class ModelFreeAgent:
         self.STATES = STATES
         self.STATE_LABELS = STATE_LABELS
 
-        self.action_value_store = (
-            ValueMap(f"{name}_action_values")
-            if state_action_parser is None
-            else (
-                ValueApproximator(
-                    f"{name}_action_value_approximator",
-                    feature_function=state_action_parser,
-                )
-                if network_size is None
-                else ValueNetwork(
-                    f"{name}_action_value_network",
-                    input_parser=state_action_parser,
-                    network_size=network_size,
-                )
-            )
-        )
+        self.action_value_type = action_value_type
+        self.action_value_network_size = action_value_network_size
+        self.action_key_parser = action_key_parser
 
+        # action value store
+        action_value_name = f"{name}_action_values"
+        self.action_value_classes = {
+            "map": ValueMap(action_value_name),
+            "approximator": ValueApproximator(
+                action_value_name,
+                feature_function=self.action_key_parser,
+            ),
+            "network": ValueNetwork(
+                action_value_name,
+                input_parser=self.action_key_parser,
+                network_size=self.action_value_network_size,
+            ),
+            "network_gpu": ValueNetworkGPU(
+                action_value_name,
+                input_parser=self.action_key_parser,
+                network_size=self.action_value_network_size,
+            ),
+        }
+        self.action_value_store = self.action_value_classes[action_value_type]
+
+        # target value store
         self.target_state_value_store = ValueMap(f"{name}_target_state_values")
         self.target_policy_action_store = ValueMap(f"{name}_target_policy_actions")
 
+        # optimal value store
         # for learning curve metrics when the optimal is known
         self.optimal_state_value_store = ValueMap(f"{name}_optimal_state_values")
         self.true_action_value_store = ValueMap(f"{name}_true_action_values")
@@ -75,6 +87,7 @@ class ModelFreeAgent:
         # for backward_td_lambda_learning_online
         self.action_eligibility_trace = EligibilityTrace()
 
+        # I/O default pathes
         self.default_file_path_for_optimal_state_values = (
             f"../output/{self.name}_optimal_state_values.json"
         )
