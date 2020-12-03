@@ -1,7 +1,7 @@
 import numpy as np
 
 from .value_store import ValueStore
-from .mlp_gpu import MLP
+from src.nn.mlp_gpu import MLP
 
 
 class ValueNetworkGPU(ValueStore):
