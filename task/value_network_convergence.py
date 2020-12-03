@@ -28,7 +28,7 @@ from random import shuffle
 
 from src.module.model_free_agent import ModelFreeAgent
 
-from src.easy_21.game import playout, ACTIONS, STATE_LABELS, PLAYER_STATES
+from src.easy_21.game import playout, PLAYER_INFO
 from src.easy_21.feature_function import numeric_feature
 
 #
@@ -44,12 +44,8 @@ STEP_SIZE = 0.01
 
 PLAYER = ModelFreeAgent(
     "player",
-    ACTIONS,
-    STATE_LABELS,
-    PLAYER_STATES,
-    action_value_type="network",
-    action_key_parser=numeric_feature,
-    action_value_network_size=[4, 2, 1],
+    PLAYER_INFO,
+    ("network", numeric_feature, [4, 2, 1]),
 )
 PLAYER.load_optimal_state_values()
 

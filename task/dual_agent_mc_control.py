@@ -28,7 +28,7 @@ from tqdm import trange
 
 from src.module.model_free_agent import ModelFreeAgent
 
-from src.easy_21.game import playout, ACTIONS, STATE_LABELS
+from src.easy_21.game import playout, PLAYER_INFO, DEALER_INFO
 
 #
 # hyperparameters and agent config
@@ -36,8 +36,8 @@ from src.easy_21.game import playout, ACTIONS, STATE_LABELS
 BATCH = 100
 EPISODES = int(1e5)
 
-PLAYER = ModelFreeAgent("player", ACTIONS, STATE_LABELS)
-DEALER = ModelFreeAgent("dealer", ACTIONS, STATE_LABELS)
+PLAYER = ModelFreeAgent("player", PLAYER_INFO)
+DEALER = ModelFreeAgent("dealer", DEALER_INFO)
 
 #
 # task process

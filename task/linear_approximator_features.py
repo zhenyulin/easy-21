@@ -30,9 +30,8 @@ from random import shuffle
 
 from src.module.model_free_agent import ModelFreeAgent
 
-from src.easy_21.game import playout, ACTIONS, STATE_LABELS, PLAYER_STATES
+from src.easy_21.game import playout, PLAYER_INFO
 from src.easy_21.feature_function import (
-    # numeric_feature,
     numeric_binary_feature,
     bounded_numeric_binary_feature,
     overlapped_binary_feature,
@@ -48,12 +47,10 @@ LEARNING_RATE = 0.001
 
 PLAYER = ModelFreeAgent(
     "player",
-    ACTIONS,
-    STATE_LABELS,
-    PLAYER_STATES,
-    action_value_type="approximator",
-    action_key_parser=full_binary_feature,
+    PLAYER_INFO,
+    ("approximator", full_binary_feature),
 )
+
 PLAYER.load_optimal_state_values()
 
 PLAYER.target_state_value_store.metrics.register(
@@ -66,7 +63,6 @@ PLAYER.target_state_value_store.metrics.register(
 #
 
 for feature_function in [
-    # numeric_feature,
     numeric_binary_feature,
     bounded_numeric_binary_feature,
     overlapped_binary_feature,
@@ -97,7 +93,6 @@ for feature_function in [
 
 
 labels = [
-    # "numeric_feature",
     "numeric_binary_feature",
     "bounded_numeric_binary_feature",
     "overlapped_binary_feature",

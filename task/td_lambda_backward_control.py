@@ -15,12 +15,12 @@ from tqdm import tqdm
 
 from src.module.model_free_agent import ModelFreeAgent
 
-from src.easy_21.game import playout, ACTIONS
+from src.easy_21.game import playout, PLAYER_INFO
 
 BATCH = 10
 EPISODES = int(1e3)
 
-PLAYER = ModelFreeAgent("player", ACTIONS)
+PLAYER = ModelFreeAgent("player", PLAYER_INFO)
 PLAYER.load_optimal_state_values()
 
 PLAYER.target_state_value_store.metrics.register(

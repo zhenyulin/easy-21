@@ -52,7 +52,7 @@ from tqdm import tqdm, trange
 
 from src.module.model_free_agent import ModelFreeAgent
 
-from src.easy_21.game import playout, ACTIONS
+from src.easy_21.game import playout, PLAYER_INFO
 
 #
 # hyperparameters and agent config
@@ -62,7 +62,7 @@ EPISODES = int(1e4)
 
 DIFF_THRESHOLD = 0.005
 
-PLAYER = ModelFreeAgent("player", ACTIONS)
+PLAYER = ModelFreeAgent("player", PLAYER_INFO)
 
 PLAYER.load_optimal_state_values()
 PLAYER.true_action_value_store.load("../output/player_true_action_values.json")

@@ -5,6 +5,13 @@ from src.lib.value_network_gpu import ValueNetworkGPU
 from src.lib.eligibility_trace import EligibilityTrace
 from src.lib.policy import e_greedy_policy, greedy_policy
 
+STORE_TYPES = {
+    "map": ValueMap,
+    "approximator": ValueApproximator,
+    "network": ValueNetwork,
+    "network_gpu": ValueNetworkGPU,
+}
+
 
 class ModelFreeAgent:
     """ModelFreeAgent
@@ -24,12 +31,8 @@ class ModelFreeAgent:
     def __init__(
         self,
         name,
-        ACTIONS,
-        STATE_LABELS=None,
-        STATES=None,
-        action_value_type="map",
-        action_value_network_size=None,
-        action_key_parser=None,
+        env_info=([], None, None),
+        action_value_store_config=("map", None),
     ):
         """
         ACTIONS:
@@ -46,34 +49,13 @@ class ModelFreeAgent:
         """
         self.name = name
 
-        self.ACTIONS = ACTIONS
-        self.STATES = STATES
-        self.STATE_LABELS = STATE_LABELS
-
-        self.action_value_type = action_value_type
-        self.action_value_network_size = action_value_network_size
-        self.action_key_parser = action_key_parser
+        # known env information
+        self.ACTIONS, self.STATE_LABELS, self.ALL_STATES = (*env_info, None, None)
 
         # action value store
-        action_value_name = f"{name}_action_values"
-        self.action_value_classes = {
-            "map": ValueMap(action_value_name),
-            "approximator": ValueApproximator(
-                action_value_name,
-                feature_function=self.action_key_parser,
-            ),
-            "network": ValueNetwork(
-                action_value_name,
-                input_parser=self.action_key_parser,
-                network_size=self.action_value_network_size,
-            ),
-            "network_gpu": ValueNetworkGPU(
-                action_value_name,
-                input_parser=self.action_key_parser,
-                network_size=self.action_value_network_size,
-            ),
-        }
-        self.action_value_store = self.action_value_classes[action_value_type]
+        self.action_value_store = self.init_action_value_store(
+            action_value_store_config
+        )
 
         # target value store
         self.target_state_value_store = ValueMap(f"{name}_target_state_values")
@@ -91,6 +73,15 @@ class ModelFreeAgent:
         self.default_file_path_for_optimal_state_values = (
             f"../output/{self.name}_optimal_state_values.json"
         )
+
+    #
+    # constructor functions
+    #
+    def init_action_value_store(self, config):
+        name = f"{self.name}_action_values"
+        (store_type, *_config) = config
+        store_config = (c for c in _config if c is not None)
+        return STORE_TYPES[store_type](name, *store_config)
 
     #
     # Control Policy Functions
@@ -470,8 +461,8 @@ class ModelFreeAgent:
     # Helper Functions - Target Value Store
     #
     def get_state_keys(self):
-        if self.STATES is not None:
-            return self.STATES
+        if self.ALL_STATES is not None:
+            return self.ALL_STATES
 
         state_action_keys = self.action_value_store.keys()
         state_keys = list(set([key[:-1] for key in state_action_keys]))

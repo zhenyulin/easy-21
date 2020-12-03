@@ -33,9 +33,9 @@ sys.path.append("../")
 
 from src.module.model_free_agent import ModelFreeAgent
 
-from src.easy_21.game import ACTIONS, STATE_LABELS
+from src.easy_21.game import PLAYER_INFO
 
-PLAYER = ModelFreeAgent("player", ACTIONS, STATE_LABELS)
+PLAYER = ModelFreeAgent("player", PLAYER_INFO)
 PLAYER.action_value_store.load("../output/player_true_action_values.json")
 
 PLAYER.set_target_value_stores()

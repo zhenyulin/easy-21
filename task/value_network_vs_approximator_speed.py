@@ -39,7 +39,7 @@ from random import shuffle
 
 from src.module.model_free_agent import ModelFreeAgent
 
-from src.easy_21.game import playout, ACTIONS, STATE_LABELS, PLAYER_STATES
+from src.easy_21.game import playout, PLAYER_INFO
 from src.easy_21.feature_function import numeric_feature
 
 #
@@ -49,15 +49,11 @@ from src.easy_21.feature_function import numeric_feature
 EPISODES = int(1e4)
 EPOCH = 10
 
-PLAYER = ModelFreeAgent(
-    "player",
-    ACTIONS,
-    STATE_LABELS,
-    PLAYER_STATES,
-    action_value_type="network",
-    action_key_parser=numeric_feature,
-    action_value_network_size=[1],
-)
+PLAYER = ModelFreeAgent("player", PLAYER_INFO)
+
+#
+# metrics config
+#
 PLAYER.load_optimal_state_values()
 PLAYER.target_state_value_store.metrics.register(
     "accuracy",
@@ -69,20 +65,19 @@ PLAYER.target_state_value_store.metrics.register(
 #
 
 configs = [
-    ("approximator", None),
-    ("network", [1]),
-    ("network", [4, 2, 1]),
+    ("approximator", numeric_feature),
+    ("network", numeric_feature, [1]),
+    ("network", numeric_feature, [4, 2, 1]),
 ]
-labels = ["native_linear", "micrograd_linear", "micrograd_network"]
+labels = [
+    "native_linear",
+    "micrograd_linear",
+    "micrograd_network",
+]
 
-for (action_value_store_type, network_size) in configs:
+for config in configs:
 
-    PLAYER.action_value_store.reset()
-
-    PLAYER.action_value_store.network_sizes = network_size
-    PLAYER.action_value_store = PLAYER.action_value_store_classes[
-        action_value_store_type
-    ]
+    PLAYER.action_value_store = PLAYER.init_action_value_store(config)
 
     sample_start = time()
 

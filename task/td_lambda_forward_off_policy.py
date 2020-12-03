@@ -31,7 +31,7 @@ from tqdm import tqdm
 
 from src.module.model_free_agent import ModelFreeAgent
 
-from src.easy_21.game import playout, ACTIONS
+from src.easy_21.game import playout, PLAYER_INFO
 
 #
 # hyperparameters and agent config
@@ -40,7 +40,7 @@ from src.easy_21.game import playout, ACTIONS
 BATCH = 100
 EPISODES = int(1e4)
 
-PLAYER = ModelFreeAgent("player", ACTIONS)
+PLAYER = ModelFreeAgent("player", PLAYER_INFO)
 PLAYER.load_optimal_state_values()
 PLAYER.true_action_value_store.load("../output/player_true_action_values.json")
 

@@ -8,7 +8,7 @@ class TestInit:
     def test_init_default_feature_function(self):
         value_approximator = ValueApproximator("value_approximator")
         assert value_approximator.name == "value_approximator"
-        assert value_approximator.feature_function(1) == 1
+        assert value_approximator.input_parser(1) == 1
         assert type(value_approximator.weights) is np.ndarray
         assert type(value_approximator._weights) is np.ndarray
         assert value_approximator.metrics.history == {}
@@ -18,24 +18,9 @@ class TestInit:
             return [x * 2 for x in input]
 
         value_approximator = ValueApproximator(
-            "value_approximator", feature_function=feature_function
+            "value_approximator", input_parser=feature_function
         )
-        assert value_approximator.feature_function([1]) == [2]
-
-
-class TestFeatures:
-    def test_return_np_array(self):  # for feature_function return normal list
-        value_approximator = ValueApproximator("value_approximator")
-        value_approximator.feature_function = lambda x: [i * 2 for i in x]
-        features = value_approximator.features([1, 2])
-        assert type(features) is np.ndarray
-        assert np.array_equal(features, [2, 4])
-
-        # for feature function return np.ndarray
-        value_approximator.feature_function = lambda x: np.array(x) * 2
-        features = value_approximator.features([1])
-        assert type(features) is np.ndarray
-        assert np.array_equal(features, [2])
+        assert value_approximator.input_parser([1]) == [2]
 
 
 class TestGet:
@@ -55,7 +40,7 @@ class TestGet:
 
     def test_output_features(self):
         value_approximator = ValueApproximator("value_approximator")
-        value_approximator.feature_function = lambda x: [i * 2 for i in x]
+        value_approximator.input_parser = lambda x: [i * 2 for i in x]
         input = [1, 2, 3]
         value, features = value_approximator.get(input, output_features=True)
         assert type(features) is np.ndarray
@@ -164,7 +149,7 @@ class TestDiff:
 def test_compare():
     value_approximator = ValueApproximator("value_approximator")
     value_approximator.weights = np.array([1.0, 1.0, 1.0])
-    value_approximator.feature_function = lambda x: [*x, 1]
+    value_approximator.input_parser = lambda x: [*x, 1]
     value_map = ValueMap("value_map")
     value_map.set((1, 2), 1)
     value_map.set((2, 2), 3)

@@ -17,10 +17,10 @@ class ValueApproximator(ValueStore):
     feature function: input values -> features
     """
 
-    def __init__(self, name, feature_function=lambda x: x):
+    def __init__(self, name, input_parser=lambda x: x):
         ValueStore.__init__(self, name)
 
-        self.feature_function = feature_function
+        self.input_parser = input_parser
 
         self.weights = np.array([])
         self._weights = np.array([])
@@ -31,10 +31,6 @@ class ValueApproximator(ValueStore):
     #
     # utility functions
     #
-    def features(self, input):
-        features = self.feature_function(input)
-        return np.array(features)
-
     def init_weights_if_not_yet(self, features):
         if self.weights.size == 0:
             # initial weights between [-1,1)
@@ -47,7 +43,7 @@ class ValueApproximator(ValueStore):
         """
         can be regarded as the output layer
         """
-        features = self.features(input)
+        features = np.array(self.input_parser(input))
         self.init_weights_if_not_yet(features)
         value = np.dot(np.transpose(features), self.weights)
         return (value, features) if output_features else value

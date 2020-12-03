@@ -7,6 +7,10 @@ ACTIONS = ["hit", "stick"]
 STATE_LABELS = ["dealer", "player"]
 
 PLAYER_STATES = [(dealer, player) for dealer in range(1, 11) for player in range(1, 22)]
+DEALER_STATES = [(dealer, player) for dealer in range(1, 22) for player in range(1, 22)]
+
+PLAYER_INFO = [ACTIONS, STATE_LABELS, PLAYER_STATES]
+DEALER_INFO = [ACTIONS, STATE_LABELS, DEALER_STATES]
 
 
 def sample(adding_only=False):

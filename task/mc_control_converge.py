@@ -38,7 +38,7 @@ from pprint import pprint
 
 from src.module.model_free_agent import ModelFreeAgent
 
-from src.easy_21.game import playout, ACTIONS, STATE_LABELS
+from src.easy_21.game import playout, PLAYER_INFO
 
 #
 # hyperparameters and agent config
@@ -48,7 +48,7 @@ EPISODES = int(1e5)
 
 EXPLORATION_RATE = 0.5
 
-PLAYER = ModelFreeAgent("player", ACTIONS, STATE_LABELS)
+PLAYER = ModelFreeAgent("player", PLAYER_INFO)
 
 #
 # task process - record the convergence for different value stores
