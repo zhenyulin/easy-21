@@ -50,7 +50,7 @@ class ModelFreeAgent:
         self.name = name
 
         # known env information
-        self.ACTIONS, self.STATE_LABELS, self.ALL_STATES = (*env_info, None, None)
+        self.ACTIONS, self.STATE_LABELS, self.ALL_STATES, *_ = (*env_info, None, None)
 
         # action value store
         self.action_value_store = self.init_action_value_store(
