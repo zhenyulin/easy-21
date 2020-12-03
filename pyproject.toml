@@ -12,6 +12,8 @@ matplotlib = "^3.3.2"
 micrograd = "^0.1.0"
 tinygrad = "^0.3.0"
 pyopencl = "^2020.3.1"
+pandas = "^1.1.4"
+seaborn = "^0.11.0"
 
 [tool.poetry.dev-dependencies]
 ipykernel = "^5.3.0"
