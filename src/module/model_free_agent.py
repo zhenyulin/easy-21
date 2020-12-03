@@ -32,7 +32,7 @@ class ModelFreeAgent:
         self,
         name,
         env_info=([], None, None),
-        action_value_store_config=("map", None),
+        action_value_store_config=("map"),
     ):
         """
         ACTIONS:
@@ -79,6 +79,11 @@ class ModelFreeAgent:
     #
     def init_action_value_store(self, config):
         name = f"{self.name}_action_values"
+
+        if type(config) is str:
+            store_type = config
+            return STORE_TYPES[store_type](name)
+
         (store_type, *_config) = config
         store_config = (c for c in _config if c is not None)
         return STORE_TYPES[store_type](name, *store_config)
