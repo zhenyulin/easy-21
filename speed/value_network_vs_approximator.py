@@ -19,7 +19,7 @@
 # - value_network_gpu is simply too slow to compare here
 #
 # INTERPRETATION:
-# - speed of native linear approximation is noticeably faster, likely
+# - speed of native linear approximation is ~3x faster, likely
 #   because of it uses specific gradient instead of a general algorithm
 #   to track and back-progagte
 # - for micrograd, a smaller network structure isn't necessary faster
@@ -51,9 +51,6 @@ EPOCH = 10
 
 PLAYER = ModelFreeAgent("player", PLAYER_INFO)
 
-#
-# metrics config
-#
 PLAYER.load_optimal_state_values()
 PLAYER.target_state_value_store.metrics.register(
     "accuracy",
