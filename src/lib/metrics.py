@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+import seaborn as sns
 import matplotlib.pyplot as plt
 
 
@@ -17,6 +19,16 @@ class Metrics:
         if name not in dictionary.keys():
             dictionary[name] = []
 
+    def pad_stack_length(self, name):
+        history_stack = self.history_stack[name]
+
+        max_length = max([len(history) for history in history_stack])
+
+        self.history_stack[name] = [
+            [*history, *np.full(max_length - len(history), None)]
+            for history in history_stack
+        ]
+
     #
     # getter functions
     #
@@ -32,6 +44,16 @@ class Metrics:
             return True
         else:
             return False
+
+    def stack_variance(self, name, indexes):
+        # self.pad_stack_length(name)
+
+        stack = self.history_stack[name]
+        [i, j] = indexes
+        zipped_stack = zip(stack[i], stack[j])
+
+        sq_error = [(a - b) ** 2 for (a, b) in zipped_stack]
+        return sq_error / len(zipped_stack)
 
     #
     # setter functions
@@ -103,27 +125,28 @@ class Metrics:
         labels=None,
     ):
         plt.figure(figsize=figsize)
-        ax = plt.axes()
 
         default_title = f"{self.scope} - metrics history - {name}"
         plt.title(default_title if title is None else title)
 
+        self.pad_stack_length(name)
         history_stack = self.history_stack[name]
 
-        max_length = max([len(history) for history in history_stack])
-
         if x is None:
-            x = np.arange(1, max_length + 1, 1)
+            x = np.arange(1, len(history_stack[0]) + 1, 1)
 
-        if len(x) < 50:
+        if len(x) < 30:
             plt.xticks(x)
 
-        for i, history in enumerate(history_stack):
-            to_max_length = max_length - len(history)
+        label_map = {}
+        for i, y in enumerate(history_stack):
+            label = str(i) if labels is None else labels[i % len(labels)]
 
-            y = [*history, *np.full(to_max_length, None)]
-            label = str(i) if labels is None else labels[i]
+            (ax,) = plt.plot(x, y)
 
-            ax.plot(x, y, label=label)
+            if label not in label_map:
+                label_map[label] = []
 
-        ax.legend()
+            label_map[label].append(ax)
+
+        plt.legend(map(lambda x: tuple(x), label_map.values()), label_map.keys())
