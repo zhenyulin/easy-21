@@ -138,14 +138,9 @@ class Metrics:
 
         df = pd.concat(dfs)
 
+        sns.lineplot(data=df, x="x", y="value", hue="label")
+
         if labels is not None and len(labels) > 3:
-            sns.lineplot(
-                data=df,
-                x="x",
-                y="value",
-                hue="label",
-                style="run",
-            )
             sns.relplot(
                 data=df,
                 x="x",
@@ -155,5 +150,3 @@ class Metrics:
                 col_wrap=2,
                 kind="line",
             )
-        else:
-            sns.lineplot(data=df, x="x", y="value", hue="label")

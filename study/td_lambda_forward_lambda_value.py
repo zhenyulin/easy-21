@@ -1,12 +1,12 @@
 # TASK:
-# - forward_td_lambda, lambda_value ~ (variance, convergence)
+# - forward_td_lambda(lambda_value) ~ (variance, convergence)
 #
 # PROCESS:
-# - run the same BATCH*EPISODES for different lambda_value [0.0, 1.0] twice
-# - forward_td_lambda_learning_offline
-# - check target_state_value_store
-#   accuracy history over different lambda_value
-#   final_accuracy over different lambda_value
+# - run same RUN*BATCH*EPISODES for lambda_value [0.0, 1.0]
+# - using forward_td_lambda_learning_offline
+# - check target_state_value_store metrics
+#   - accuracy history ~ lambda_value
+#   - final_accuracy ~ lambda_value
 #
 # RESULTS:
 # - the same lambda_value can have very different final_accuracy in two runs
@@ -40,8 +40,9 @@ from src.easy_21.game import playout, PLAYER_INFO
 # hyperparameters and agent config
 #
 
+RUN = 2
 BATCH = 10
-EPISODES = int(1e5)
+EPISODES = int(1e3)
 
 PLAYER = ModelFreeAgent("player", PLAYER_INFO)
 PLAYER.load_optimal_state_values()
@@ -62,7 +63,7 @@ PLAYER.target_state_value_store.metrics.register(
 
 lambda_value_range = arange(0, 1.1, 0.2)
 
-for _ in range(2):
+for _ in range(RUN):
     for lambda_value in tqdm(lambda_value_range):
 
         PLAYER.action_value_store.reset()
@@ -79,14 +80,15 @@ for _ in range(2):
             PLAYER.target_state_value_store.metrics.record("accuracy")
 
         PLAYER.target_state_value_store.metrics.stack("accuracy")
-        PLAYER.target_state_value_store.record("final_accuracy")
+        PLAYER.target_state_value_store.metrics.record("final_accuracy")
 
     PLAYER.target_state_value_store.metrics.stack("final_accuracy")
 
-PLAYER.target_state_value_store.metrics.plot_history_stack(
-    "final_accuracy", x=lambda_value_range
-)
+
 PLAYER.target_state_value_store.metrics.plot_history_stack(
     "accuracy",
-    labels=[f"{r:.1f}" for r in [*lambda_value_range, *lambda_value_range]],
+    labels=[f"{r:.1f}" for r in lambda_value_range],
+)
+PLAYER.target_state_value_store.metrics.plot_history_stack(
+    "final_accuracy", x=lambda_value_range
 )
