@@ -31,7 +31,7 @@ import sys
 
 sys.path.append("../")
 
-from src.module.model_free_agent import ModelFreeAgent
+from src.agent.model_free_agent import ModelFreeAgent
 
 from src.easy_21.game import PLAYER_INFO
 

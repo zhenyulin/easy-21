@@ -50,7 +50,7 @@ sys.path.append("../")
 from numpy import arange
 from tqdm import tqdm, trange
 
-from src.module.model_free_agent import ModelFreeAgent
+from src.agent.model_free_agent import ModelFreeAgent
 
 from src.easy_21.game import playout, PLAYER_INFO
 

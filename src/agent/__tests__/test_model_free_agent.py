@@ -1,7 +1,7 @@
 from unittest import mock
 from copy import deepcopy
 
-from src.module.model_free_agent import ModelFreeAgent
+from src.agent.model_free_agent import ModelFreeAgent
 
 
 class CopyMock(mock.MagicMock):

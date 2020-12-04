@@ -36,7 +36,7 @@ sys.path.append("../")
 from tqdm import trange
 from pprint import pprint
 
-from src.module.model_free_agent import ModelFreeAgent
+from src.agent.model_free_agent import ModelFreeAgent
 
 from src.easy_21.game import playout, PLAYER_INFO
 
