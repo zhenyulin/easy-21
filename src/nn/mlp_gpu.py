@@ -58,7 +58,7 @@ class MLP:
     def learn(self, x, y, step_size=0.01):
 
         _y = Tensor(y, gpu=self.gpu)
-        two = Tensor([[2]], gpu=self.gpu)
+        two = Tensor([[2] for _ in range(len(y))], gpu=self.gpu)
         lr = Tensor([[step_size]], gpu=self.gpu)
 
         output = self.__call__(x)
@@ -68,4 +68,4 @@ class MLP:
         for layer in self.layers:
             layer -= layer.grad * lr
 
-        # self.reset_grad()
+        self.reset_grad()

@@ -40,6 +40,15 @@ class Testlearn:
         assert abs(value - sample[1]) < abs(_value - sample[1])
 
 
+class TestBatchLearn:
+    def test_batch_learn_works(self):
+        value_network = ValueNetworkGPU("value_network")
+        sample = ([0.5, 0.7, 2.0], 1)
+        samples = [sample, ([0.6, 0.6, 0.6], 2)]
+        value_network.init_network_if_not_yet(sample[0])
+        value_network.batch_learn(samples)
+
+
 class TestBackup:
     def test_backup_to__network(self):
         value_network = ValueNetworkGPU("value_network")

@@ -99,6 +99,5 @@ def test_compare():
     for (key, value) in mock_key_values:
         value_map.set(key, value)
     errors = [value_network.get(key) - value for (key, value) in mock_key_values]
-    print(errors)
     mse = sum([error ** 2 for error in errors]) / 2
     assert value_network.compare(value_map) ** 2 - mse < 1e-5
