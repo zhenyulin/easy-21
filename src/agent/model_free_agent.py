@@ -17,6 +17,7 @@ STORE_TYPES = {
     "map": ValueMap,
     "approximator": ValueApproximator,
     "network": ValueNetwork,
+    # NOTE: ValueNetworkGPU based on tinygrad is not performantive
     "network_gpu": ValueNetworkGPU,
 }
 
