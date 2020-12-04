@@ -88,11 +88,14 @@ def playout(
     player_offline_learning=lambda x: x,
     dealer_online_learning=lambda x, final=False: x,
     dealer_offline_learning=lambda x: x,
+    observability_level="full",
 ):
     player_sequence = []
     dealer_sequence = []
 
     state = init()
+
+    player_init = state["player"]
 
     while state["reward"] is None:
         # online algorithm typically learn a SARSA sequence
@@ -101,10 +104,16 @@ def playout(
         # end of the game, and learnt with the final mark
         player_online_learning(player_sequence)
 
-        player_action_index = player_policy(in_key(state))
+        player_observed = {
+            "full": state,
+            "only_initial": state,
+            "blind": {"dealer": 0, "player": state["player"]},
+        }[observability_level]
+
+        player_action_index = player_policy(in_key(player_observed))
 
         immediate_reward = 0
-        time_step = [in_key(state), player_action_index, immediate_reward]
+        time_step = [in_key(player_observed), player_action_index, immediate_reward]
         player_sequence.append(time_step)
 
         player_stick = player_action_index == ACTIONS.index("stick")
@@ -119,10 +128,21 @@ def playout(
         dealer_online_learning(dealer_sequence)
 
         player_stick = True
-        dealer_action_index = dealer_policy(in_key(state))
+
+        dealer_observed = {
+            "full": state,
+            "only_initial": {"dealer": state["dealer"], "player": player_init},
+            "blind": {"dealer": state["dealer"], "player": 0},
+        }[observability_level]
+
+        dealer_action_index = dealer_policy(in_key(dealer_observed))
 
         immediate_reward = 0
-        time_step = [in_key(state), dealer_action_index, immediate_reward]
+        time_step = [
+            in_key(dealer_observed),
+            dealer_action_index,
+            immediate_reward,
+        ]
         dealer_sequence.append(time_step)
 
         dealer_stick = dealer_action_index == ACTIONS.index("stick")

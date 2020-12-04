@@ -237,3 +237,39 @@ class TestPlayout:
             mock.call([[(10, 20), 0, 0], [(20, 20), 1, 0]], final=True),
         ]
         assert mock_learning.call_args_list == expected
+
+    @mock.patch("src.easy_21.game.sample", return_value=10)
+    def test_only_initial_observability(self, mock_sample):
+        player_learning = CopyMock()
+        dealer_learning = CopyMock()
+
+        playout(
+            player_offline_learning=player_learning,
+            dealer_offline_learning=dealer_learning,
+            observability_level="only_initial",
+        )
+
+        assert player_learning.call_args_list == [
+            mock.call([[(10, 10), 0, 0], [(10, 20), 1, 0]]),
+        ]
+        assert dealer_learning.call_args_list == [
+            mock.call([[(10, 10), 0, 0], [(20, 10), 1, 0]]),
+        ]
+
+    @mock.patch("src.easy_21.game.sample", return_value=10)
+    def test_blind_observability(self, mock_sample):
+        player_learning = CopyMock()
+        dealer_learning = CopyMock()
+
+        playout(
+            player_offline_learning=player_learning,
+            dealer_offline_learning=dealer_learning,
+            observability_level="blind",
+        )
+
+        assert player_learning.call_args_list == [
+            mock.call([[(0, 10), 0, 0], [(0, 20), 1, 0]]),
+        ]
+        assert dealer_learning.call_args_list == [
+            mock.call([[(10, 0), 0, 0], [(20, 0), 1, 0]]),
+        ]
