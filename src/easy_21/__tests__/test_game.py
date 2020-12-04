@@ -1,7 +1,5 @@
-import pytest
-
 from unittest import mock
-from src.easy_21.game import sample, compare, hit, step, init, game, playout
+from src.easy_21.game import sample, compare, hit, step, init, playout
 from copy import deepcopy
 
 
@@ -190,18 +188,6 @@ class TestInit:
             "player": 10,
             "dealer": 10,
             "reward": None,
-        }
-
-
-class TestGame:
-    @pytest.mark.timeout(5)
-    @mock.patch("src.easy_21.game.sample", return_value=10)
-    def test_game_with_dummy_player_dealer_policy(self, mock_sample):
-        print("\n")
-        assert game(log=True) == {
-            "player": 20,
-            "dealer": 20,
-            "reward": 0,
         }
 
 

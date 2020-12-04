@@ -62,51 +62,19 @@ def in_key(state):
     return (state["dealer"], state["player"])
 
 
-def dummy_dealer_stick_policy(state_key, return_index=False):
+def dummy_dealer_stick_policy(state_key):
     # dealder always stick for any sum of 17 or greater
     (dealer, _) = state_key
     stick = dealer >= 17
-    if return_index:
-        return ACTIONS.index("stick") if stick else ACTIONS.index("hit")
-    return stick
+
+    return ACTIONS.index("stick") if stick else ACTIONS.index("hit")
 
 
-def dummy_player_stick_policy(state_key, return_index=False):
+def dummy_player_stick_policy(state_key):
     (_, player) = state_key
     stick = player >= 17
-    if return_index:
-        return ACTIONS.index("stick") if stick else ACTIONS.index("hit")
-    return stick
 
-
-def game(
-    player_policy=dummy_player_stick_policy,
-    dealer_policy=dummy_dealer_stick_policy,
-    log=False,
-):
-    state = init()
-
-    while state["reward"] is None:
-        if log:
-            print(state)
-
-        player_stick = player_policy(in_key(state))
-        if player_stick:
-            break
-
-        state = step(state, player_stick)
-
-    while state["reward"] is None:
-        if log:
-            print(state)
-
-        player_stick = True
-        dealer_stick = dealer_policy(in_key(state))
-        state = step(state, player_stick, dealer_stick)
-
-    if log:
-        print(state)
-    return state
+    return ACTIONS.index("stick") if stick else ACTIONS.index("hit")
 
 
 # NOT DO: add final flag to the last step in the episode
@@ -114,12 +82,8 @@ def game(
 # this would also requires to break the sequences into sarsa
 # not very useful for Easy_21 as the sequence is relatively short
 def playout(
-    player_policy=lambda state_key: dummy_player_stick_policy(
-        state_key, return_index=True
-    ),
-    dealer_policy=lambda state_key: dummy_dealer_stick_policy(
-        state_key, return_index=True
-    ),
+    player_policy=dummy_player_stick_policy,
+    dealer_policy=dummy_dealer_stick_policy,
     player_online_learning=lambda x, final=False: x,
     player_offline_learning=lambda x: x,
     dealer_online_learning=lambda x, final=False: x,
