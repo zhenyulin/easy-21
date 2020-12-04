@@ -65,11 +65,11 @@ class TestMonteCarloLearning:
         test.monte_carlo_learning_offline(episode, discount)
 
         expected = [
-            mock.call((0, 0, 0), 0.75),
-            mock.call((0, 0, 1), 1.5),
-            mock.call((1, 0, 0), 1),
+            ((0, 0, 0), 0.75),
+            ((0, 0, 1), 1.5),
+            ((1, 0, 0), 1),
         ]
-        assert mock_learn.call_args_list == expected
+        assert [args for (args, kwargs) in mock_learn.call_args_list] == expected
 
     def test_learn_empty_sequence(self):
         test = ModelFreeAgent("test", AGENT_INFO)
@@ -82,7 +82,7 @@ class TestMonteCarloLearning:
         test.monte_carlo_learning_offline(episode)
 
         expected = []
-        assert mock_learn.call_args_list == expected
+        assert [args for (args, kwargs) in mock_learn.call_args_list] == expected
 
     def test_learn_single_step_sequence(self):
         test = ModelFreeAgent("test", AGENT_INFO)
@@ -95,9 +95,9 @@ class TestMonteCarloLearning:
         test.monte_carlo_learning_offline(episode)
 
         expected = [
-            mock.call((0, 0, 0), 0),
+            ((0, 0, 0), 0),
         ]
-        assert mock_learn.call_args_list == expected
+        assert [args for (args, kwargs) in mock_learn.call_args_list] == expected
 
 
 class TestTemporalDifferenceLearning:
@@ -121,9 +121,9 @@ class TestTemporalDifferenceLearning:
             1,
         ]
         expected = [
-            mock.call((0, 0, 0), td_returns[0]),
-            mock.call((0, 0, 1), td_returns[1]),
-            mock.call((1, 0, 0), td_returns[2]),
+            ((0, 0, 0), td_returns[0]),
+            ((0, 0, 1), td_returns[1]),
+            ((1, 0, 0), td_returns[2]),
         ]
 
         N = len(episode)
@@ -132,7 +132,7 @@ class TestTemporalDifferenceLearning:
                 episode[: i + 1], discount=discount, final=i == N - 1
             )
 
-        assert mock_learn.call_args_list == expected
+        assert [args for (args, kwargs) in mock_learn.call_args_list] == expected
 
     def test_empty_sequence(self):
         test = ModelFreeAgent("test", AGENT_INFO)
@@ -150,7 +150,7 @@ class TestTemporalDifferenceLearning:
                 episode[: i + 1], discount=discount, final=i == N - 1
             )
 
-        assert mock_learn.call_args_list == expected
+        assert [args for (args, kwargs) in mock_learn.call_args_list] == expected
 
     def test_single_step_episode(self):
         test = ModelFreeAgent("test", AGENT_INFO)
@@ -163,7 +163,7 @@ class TestTemporalDifferenceLearning:
         ]
         discount = 0.5
         expected = [
-            mock.call((0, 0, 0), 0),
+            ((0, 0, 0), 0),
         ]
 
         N = len(episode)
@@ -172,7 +172,7 @@ class TestTemporalDifferenceLearning:
                 episode[: i + 1], discount=discount, final=i == N - 1
             )
 
-        assert mock_learn.call_args_list == expected
+        assert [args for (args, kwargs) in mock_learn.call_args_list] == expected
 
 
 class TestForwardTemporalDifferenceLambdaLearning:
@@ -212,9 +212,9 @@ class TestForwardTemporalDifferenceLambdaLearning:
         ]
 
         expected = [
-            mock.call((0, 0, 0), td_returns[0]),
-            mock.call((0, 0, 1), td_returns[1]),
-            mock.call((1, 0, 0), td_returns[2]),
+            ((0, 0, 0), td_returns[0]),
+            ((0, 0, 1), td_returns[1]),
+            ((1, 0, 0), td_returns[2]),
         ]
 
         test.forward_td_lambda_learning_offline(
@@ -228,7 +228,7 @@ class TestForwardTemporalDifferenceLambdaLearning:
             + lambda_value ** 2  # 0.25
         ) == 1
 
-        assert mock_learn.call_args_list == expected
+        assert [args for (args, kwargs) in mock_learn.call_args_list] == expected
 
     def test_empty_sequence(self):
         test = ModelFreeAgent("test", AGENT_INFO)
@@ -247,7 +247,7 @@ class TestForwardTemporalDifferenceLambdaLearning:
             lambda_value=lambda_value,
         )
 
-        assert mock_learn.call_args_list == expected
+        assert [args for (args, kwargs) in mock_learn.call_args_list] == expected
 
     def test_single_step_episode(self):
         test = ModelFreeAgent("test", AGENT_INFO)
@@ -261,7 +261,7 @@ class TestForwardTemporalDifferenceLambdaLearning:
         discount = 0.5
         lambda_value = 0.5
         expected = [
-            mock.call((0, 0, 0), 0),
+            ((0, 0, 0), 0),
         ]
 
         test.forward_td_lambda_learning_offline(
@@ -270,7 +270,7 @@ class TestForwardTemporalDifferenceLambdaLearning:
             lambda_value=lambda_value,
         )
 
-        assert mock_learn.call_args_list == expected
+        assert [args for (args, kwargs) in mock_learn.call_args_list] == expected
 
 
 class TestBackwardTemporalDifferenceLambdaLearning:
@@ -360,7 +360,7 @@ class TestBackwardTemporalDifferenceLambdaLearning:
                 episode[: i + 1], discount=discount, final=i == N - 1
             )
 
-        assert mock_learn.call_args_list == expected
+        assert [args for (args, kwargs) in mock_learn.call_args_list] == expected
 
     def test_single_step_episode(self):
         test = ModelFreeAgent("test", AGENT_INFO)

@@ -94,7 +94,7 @@ class TestDiff:
         value_network.backup()
         value_network.learn(sample[0], sample[1])
         diff = value_network.diff()
-        assert diff < _diff
+        assert _diff - diff > 1e-7
 
 
 def test_compare():

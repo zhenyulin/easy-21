@@ -121,8 +121,7 @@ class ModelFreeAgent:
         if evaluation_only:
             return evaluations
 
-        for (sample_key, sample_return) in evaluations:
-            self.action_value_store.learn(sample_key, sample_return)
+        self.action_value_store.batch_learn(evaluations)
 
     def temporal_difference_learning_offline(
         self,
@@ -142,8 +141,7 @@ class ModelFreeAgent:
         if evaluation_only:
             return evaluations
 
-        for (sample_key, sample_return) in evaluations:
-            self.action_value_store.learn(sample_key, sample_return)
+        self.action_value_store.batch_learn(evaluations)
 
     def forward_td_lambda_learning_offline(
         self,
@@ -181,8 +179,7 @@ class ModelFreeAgent:
         if evaluation_only:
             return evaluations
 
-        for (sample_key, sample_return) in evaluations:
-            self.action_value_store.learn(sample_key, sample_return)
+        self.action_value_store.batch_learn(evaluations)
 
     def forward_td_lambda_learning_offline_batch(
         self,
@@ -197,6 +194,11 @@ class ModelFreeAgent:
         MINI_BATCH = len(episodes) // mini_batch_size
 
         for n in range(MINI_BATCH):
+            # least square error over a batch of episodes
+            # with fixed value_store(network)
+            # to lower variance
+            # use batch_learn
+            # to avoid overfit to individual samples
             mini_batch_episodes = episodes[
                 n * mini_batch_size : (n + 1) * mini_batch_size
             ]
@@ -214,14 +216,7 @@ class ModelFreeAgent:
                 )
                 mini_batch_evaluations.extend(evaluations)
 
-            # least square error over a batch with SGD in .learn
-            # to avoid overfit to individual samples
-            for (state_action_key, lambda_return) in mini_batch_evaluations:
-                self.action_value_store.learn(
-                    state_action_key,
-                    lambda_return,
-                    step_size=step_size,
-                )
+            self.action_value_store.batch_learn(evaluations, step_size=step_size)
 
     def temporal_difference_learning_online(
         self,
@@ -238,8 +233,7 @@ class ModelFreeAgent:
             off_policy,
             final,
         )
-        for (sample_key, sample_return) in evaluations:
-            self.action_value_store.learn(sample_key, sample_return)
+        self.action_value_store.batch_learn(evaluations)
 
     def backward_td_lambda_learning_online(
         self,

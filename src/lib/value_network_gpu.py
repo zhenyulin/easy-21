@@ -64,6 +64,11 @@ class ValueNetworkGPU(ValueStore):
     def learn(self, sample_input, sample_target, step_size=0.01):
         self.network.learn([sample_input], [[sample_target]], step_size=step_size)
 
+    def batch_learn(self, evaluations, step_size=0.01):
+        sample_inputs = [sample_key for (sample_key, _) in evaluations]
+        sample_targets = [[sample_return] for (_, sample_return) in evaluations]
+        self.learn(self, sample_inputs, sample_targets, step_size=step_size)
+
     def backup(self):
         if self.network is not None:
 

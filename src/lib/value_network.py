@@ -73,6 +73,10 @@ class ValueNetwork(ValueStore):
         for p in self.network.parameters():
             p.data -= learning_rate * p.grad
 
+    def batch_learn(self, evaluations, step_size=0.01):
+        for (sample_key, sample_return) in evaluations:
+            self.learn(sample_key, sample_return, step_size=step_size)
+
     def backup(self):
         self._network = deepcopy(self.network)
 

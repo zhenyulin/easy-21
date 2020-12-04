@@ -90,6 +90,10 @@ class ValueMap(ValueStore):
         # for the case of using eligibility
         d["mse"] += step_size(d["count"]) * mse_error
 
+    def batch_learn(self, evaluations, step_size=lambda count: 1 / count):
+        for (sample_key, sample_return) in evaluations:
+            self.learn(sample_key, sample_return, step_size=step_size)
+
     def learn_with_eligibility_trace(
         self,
         eligibility_trace,
