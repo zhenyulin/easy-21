@@ -120,9 +120,9 @@ def playout(
     dealer_policy=lambda state_key: dummy_dealer_stick_policy(
         state_key, return_index=True
     ),
-    player_online_learning=lambda x: x,
+    player_online_learning=lambda x, final=False: x,
     player_offline_learning=lambda x: x,
-    dealer_online_learning=lambda x: x,
+    dealer_online_learning=lambda x, final=False: x,
     dealer_offline_learning=lambda x: x,
 ):
     player_sequence = []
@@ -167,17 +167,15 @@ def playout(
         state = step(state, player_stick, dealer_stick)
 
     reward = state["reward"]
-    # update the final time step reward to true reward and put final mark
+    # update the last time step reward to the final reward
     player_sequence[-1][-1] = reward
-    player_sequence[-1].append(True)
-    player_online_learning(player_sequence)
+    player_online_learning(player_sequence, final=True)
     player_offline_learning(player_sequence)
 
-    # if player busted, dealer will have no move
     if len(dealer_sequence) > 0:
+        # if player busted, dealer will have no move
         dealer_sequence[-1][-1] = -reward
-        dealer_sequence[-1].append(True)
-        dealer_online_learning(dealer_sequence)
+        dealer_online_learning(dealer_sequence, final=True)
         dealer_offline_learning(dealer_sequence)
 
     return player_sequence, dealer_sequence

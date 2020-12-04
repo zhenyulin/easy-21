@@ -209,14 +209,14 @@ class TestPlayout:
     @mock.patch("src.easy_21.game.sample", return_value=10)
     def test_return_correct_sequences(self, mock_sample):
         player_sequence, dealer_sequence = playout()
-        assert player_sequence == [[(10, 10), 0, 0], [(10, 20), 1, 0, True]]
-        assert dealer_sequence == [[(10, 20), 0, 0], [(20, 20), 1, 0, True]]
+        assert player_sequence == [[(10, 10), 0, 0], [(10, 20), 1, 0]]
+        assert dealer_sequence == [[(10, 20), 0, 0], [(20, 20), 1, 0]]
 
     @mock.patch("src.easy_21.game.sample", return_value=10)
     def test_player_offline_learning_sequence(self, mock_sample):
         mock_learning = mock.Mock()
         playout(player_offline_learning=mock_learning)
-        expected = [mock.call([[(10, 10), 0, 0], [(10, 20), 1, 0, True]])]
+        expected = [mock.call([[(10, 10), 0, 0], [(10, 20), 1, 0]])]
         assert mock_learning.call_args_list == expected
 
     @mock.patch("src.easy_21.game.sample", return_value=10)
@@ -228,7 +228,7 @@ class TestPlayout:
         expected = [
             mock.call([]),
             mock.call([[(10, 10), 0, 0]]),
-            mock.call([[(10, 10), 0, 0], [(10, 20), 1, 0, True]]),
+            mock.call([[(10, 10), 0, 0], [(10, 20), 1, 0]], final=True),
         ]
         assert mock_learning.call_args_list == expected
 
@@ -236,7 +236,7 @@ class TestPlayout:
     def test_dealer_offline_learning_sequence(self, mock_sample):
         mock_learning = mock.Mock()
         playout(dealer_offline_learning=mock_learning)
-        expected = [mock.call([[(10, 20), 0, 0], [(20, 20), 1, 0, True]])]
+        expected = [mock.call([[(10, 20), 0, 0], [(20, 20), 1, 0]])]
         assert mock_learning.call_args_list == expected
 
     @mock.patch("src.easy_21.game.sample", return_value=10)
@@ -248,6 +248,6 @@ class TestPlayout:
         expected = [
             mock.call([]),
             mock.call([[(10, 20), 0, 0]]),
-            mock.call([[(10, 20), 0, 0], [(20, 20), 1, 0, True]]),
+            mock.call([[(10, 20), 0, 0], [(20, 20), 1, 0]], final=True),
         ]
         assert mock_learning.call_args_list == expected
