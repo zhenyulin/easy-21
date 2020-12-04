@@ -37,7 +37,7 @@ class Testlearn:
         for _ in range(5):
             value_network.learn(sample[0], sample[1])
         value = value_network.get(sample[0])
-        assert abs(value - sample[1]) < abs(_value - sample[1])
+        assert abs(_value - sample[1]) - abs(value - sample[1]) > 1e-3
 
 
 class TestBatchLearn:

@@ -53,7 +53,7 @@ class TestBackup:
         _value_after = value_network._network(sample[0]).data
 
         assert abs(_value_after - _value) < 1e-5
-        assert abs(value - _value) > 1e-5
+        assert abs(value - _value) > 1e-3
 
 
 class TestReset:
@@ -86,7 +86,7 @@ class TestDiff:
         value_network.backup()
         value_network.learn([1, 1], 0)
         diff = value_network.diff()
-        assert diff < _diff
+        assert _diff - diff > 1e-4
 
 
 def test_compare():

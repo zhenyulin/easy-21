@@ -2,6 +2,7 @@ from src.lib.value_map import ValueMap
 from src.lib.value_approximator import ValueApproximator
 from src.lib.value_network import ValueNetwork
 from src.lib.value_network_gpu import ValueNetworkGPU
+
 from src.lib.eligibility_trace import EligibilityTrace
 from src.lib.policy import e_greedy_policy, greedy_policy
 
