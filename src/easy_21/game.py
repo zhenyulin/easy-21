@@ -132,10 +132,9 @@ def playout(
 
     while state["reward"] is None:
         # online algorithm typically learn a SARSA sequence
-        # so unless final is specified, the last reward is
-        # not taken into account
-        # final is specified when the final reward is confirmed
-        # at the end of game
+        # here a SARSA is only learnt if the last step is not final
+        # if the step is final, its reward needs to be updated at the
+        # end of the game, and learnt with the final mark
         player_online_learning(player_sequence)
 
         player_action_index = player_policy(in_key(state))
