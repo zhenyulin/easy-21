@@ -269,22 +269,67 @@ class ModelFreeAgent:
 
     def set_target_value_stores(self):
         for state_key in self.get_state_keys():
-            target_action_index, target_action_value = greedy_policy(
+            target_action_index, _ = greedy_policy(
                 state_key, self.ACTIONS, self.action_value_store
             )
             self.target_policy_action_store.set(state_key, target_action_index)
-            self.target_state_value_store.set(state_key, target_action_value)
+            target_action_all_data = self.action_value_store.data[
+                (*state_key, target_action_index)
+            ]
+            self.target_state_value_store.data[state_key] = target_action_all_data
 
-    def plot_2d_target_value_stores(self, view_init=(None, None)):
+    def plot_2d_target_value_stores(
+        self,
+        state_value=True,
+        policy=True,
+        count=False,
+        variance=False,
+        view_init=(None, None),
+        invert_xaxis=False,
+    ):
+        self.set_target_value_stores()
+
         [x_label, y_label] = (
             self.STATE_LABELS if self.STATE_LABELS is not None else [None, None]
         )
-        self.target_state_value_store.plot_2d_value(x_label, y_label).view_init(
-            view_init[0], view_init[1]
-        )
-        self.target_policy_action_store.plot_2d_value(
-            x_label, y_label, z_label="Action Index"
-        ).view_init(view_init[0], view_init[1])
+
+        axes = []
+
+        if state_value:
+            axes.append(
+                self.target_state_value_store.plot_2d_value(
+                    x_label,
+                    y_label,
+                )
+            )
+
+        if policy:
+            axes.append(
+                self.target_policy_action_store.plot_2d_value(
+                    x_label, y_label, z_label="Action Index"
+                )
+            )
+
+        if count:
+            axes.append(
+                self.target_state_value_store.plot_2d_value(
+                    x_label, y_label, z_label="Count", value_key="count"
+                )
+            )
+        if variance:
+            axes.append(
+                self.target_state_value_store.plot_2d_value(
+                    x_label, y_label, z_label="Count", value_key="variance"
+                )
+            )
+
+        for ax in axes:
+            ax.view_init(view_init[0], view_init[1])
+
+            if invert_xaxis:
+                ax.invert_xaxis()
+
+        return axes
 
     def target_state_value_store_accuracy_to_optimal(self):
         self.set_target_value_stores()
