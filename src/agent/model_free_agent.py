@@ -319,7 +319,7 @@ class ModelFreeAgent:
         if variance:
             axes.append(
                 self.target_state_value_store.plot_2d_value(
-                    x_label, y_label, z_label="Count", value_key="variance"
+                    x_label, y_label, z_label="Count", value_key="mse"
                 )
             )
 

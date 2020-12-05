@@ -38,23 +38,8 @@ from src.easy_21.game import PLAYER_INFO
 PLAYER = ModelFreeAgent("player", PLAYER_INFO)
 PLAYER.action_value_store.load("../output/player_true_action_values.json")
 
-PLAYER.set_target_value_stores()
-
-for state_key in PLAYER.target_state_value_store.keys():
-    optimal_action_index = PLAYER.target_policy_action_store.get(state_key)
-    all_data = PLAYER.action_value_store.data[(*state_key, optimal_action_index)]
-    PLAYER.target_state_value_store.data[state_key] = all_data
-
-x_label, y_label = "Dealer", "Player"
-
-PLAYER.target_policy_action_store.plot_2d_value(
-    x_label, y_label, z_label="Action Index"
-).view_init(30, 10)
-PLAYER.target_state_value_store.plot_2d_value(x_label, y_label).view_init(30, 10)
-
-PLAYER.target_state_value_store.plot_2d_value(
-    x_label, y_label, z_label="Variance", value_key="mse"
-).view_init(30, 10)
-PLAYER.target_state_value_store.plot_2d_value(
-    x_label, y_label, z_label="Count", value_key="count"
-).view_init(30, 10)
+PLAYER.plot_2d_target_value_stores(
+    view_init=(30, -20),
+    count=True,
+    variance=True,
+)
