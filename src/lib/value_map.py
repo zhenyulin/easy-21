@@ -1,5 +1,7 @@
 import json
 import numpy as np
+import pandas as pd
+import seaborn as sns
 import matplotlib.pyplot as plt
 
 from copy import deepcopy
@@ -66,7 +68,6 @@ class ValueMap(ValueStore):
     def set(self, key, value):
         self.init_if_not_found(key)
 
-        self.data[key]["count"] = 0
         self.data[key]["value"] = value
 
     def learn(
@@ -186,6 +187,45 @@ class ValueMap(ValueStore):
         ax.plot_surface(X, Y, Z)
 
         return ax
+
+    # TODO: aggregate partial key values, count mse together
+    # to calculate the sample mean, sample mse
+    # and use mse as the std range
+    #
+    # check the different of the default by sns
+    def plot_partial_key(
+        self,
+        x_key,
+        y_key="value",
+        hue_key=None,
+        key_labels=None,
+        title=None,
+        figsize=(18, 18),
+    ):
+        plt.figure(figsize=figsize)
+
+        default_title = f"{self.name} - {x_key}, {y_key}"
+        plt.title(default_title if title is None else title)
+
+        flatten_data = [
+            {
+                **{
+                    i if key_labels is None else key_labels[i]: value
+                    for i, value in enumerate(key)
+                },
+                **value,
+            }
+            for (key, value) in self.data.items()
+        ]
+
+        df = pd.DataFrame(flatten_data)
+
+        sns.lineplot(
+            data=df,
+            x=x_key,
+            y=y_key,
+            hue=hue_key,
+        )
 
     #
     # file I/O functions
