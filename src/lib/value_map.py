@@ -132,7 +132,7 @@ class ValueMap(ValueStore):
             new_value = self.data[key]["value"]
 
             error = new_value - old_value
-            sq_error += error ** 2
+            sq_error += error**2
 
         if backup:
             self.backup()
@@ -144,7 +144,7 @@ class ValueMap(ValueStore):
         for key in self.data.keys():
             other_value = other_value_map.get(key)
             error = self.data[key]["value"] - other_value
-            sq_error += error ** 2
+            sq_error += error**2
 
         return sqrt(sq_error / len(self.data.keys()))
 

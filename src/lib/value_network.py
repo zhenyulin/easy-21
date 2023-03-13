@@ -107,6 +107,6 @@ class ValueNetwork(ValueStore):
         for key in value_map.keys():
             other_value = value_map.get(key)
             error = self.get(key) - other_value
-            sq_error += error ** 2
+            sq_error += error**2
 
         return np.sqrt(sq_error / len(value_map.keys()))

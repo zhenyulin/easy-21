@@ -198,14 +198,14 @@ class TestForwardTemporalDifferenceLambdaLearning:
 
         td_returns = [
             (1 - lambda_value)
-            * (lambda_value ** 0)
+            * (lambda_value**0)
             * (0 + discount * second_action_value)
             + (1 - lambda_value)
-            * (lambda_value ** 1)
-            * (0 + discount * 1 + discount ** 2 * third_action_value)
-            + lambda_value ** 2 * (0 + discount * 1 + discount ** 2 * 1),
+            * (lambda_value**1)
+            * (0 + discount * 1 + discount**2 * third_action_value)
+            + lambda_value**2 * (0 + discount * 1 + discount**2 * 1),
             (1 - lambda_value)
-            * (lambda_value ** 0)
+            * (lambda_value**0)
             * (1 + discount * third_action_value)
             + lambda_value * (1 + discount * 1),
             1.0,
@@ -223,9 +223,9 @@ class TestForwardTemporalDifferenceLambdaLearning:
             lambda_value=lambda_value,
         )
         assert (
-            (1 - lambda_value) * (lambda_value ** 0)  # 0.5
-            + (1 - lambda_value) * (lambda_value ** 1)  # 0.25
-            + lambda_value ** 2  # 0.25
+            (1 - lambda_value) * (lambda_value**0)  # 0.5
+            + (1 - lambda_value) * (lambda_value**1)  # 0.25
+            + lambda_value**2  # 0.25
         ) == 1
 
         assert [args for (args, kwargs) in mock_learn.call_args_list] == expected
@@ -326,8 +326,8 @@ class TestBackwardTemporalDifferenceLambdaLearning:
         ]
 
         assert test.action_eligibility_trace.data == {
-            (0, 0, 0): 1 * 0.5 ** 3 * 0.5 ** 3,
-            (0, 0, 1): 1 * 0.5 ** 2 * 0.5 ** 2 + 1 * 0.5 * 0.5,
+            (0, 0, 0): 1 * 0.5**3 * 0.5**3,
+            (0, 0, 1): 1 * 0.5**2 * 0.5**2 + 1 * 0.5 * 0.5,
             (1, 0, 0): 1,
         }
 
