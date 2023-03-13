@@ -18,6 +18,9 @@
 # - player needs to integrate different possibilities into its
 #   optimal policy action
 #
+# FURTHER TODO:
+# - confirm equilibrium
+#
 # RUN:
 # %%
 import sys
@@ -33,8 +36,8 @@ from src.easy_21.game import playout, PLAYER_INFO, DEALER_INFO
 #
 # hyperparameters and agent config
 #
-BATCH = 100
-EPISODES = int(1e5)
+BATCH = 500
+EPISODES = int(1e4)
 
 PLAYER = ModelFreeAgent("player", PLAYER_INFO)
 DEALER = ModelFreeAgent("dealer", DEALER_INFO)
@@ -52,14 +55,14 @@ for _ in trange(BATCH):
             dealer_offline_learning=DEALER.monte_carlo_learning_offline,
         )
 
-    PLAYER.action_value_store.metrics.record("diff")
-    DEALER.action_value_store.metrics.record("diff")
+    PLAYER_converged = PLAYER.action_value_store.metrics.record_converged("diff")
+    DEALER_converged = DEALER.action_value_store.metrics.record_converged("diff")
 
-PLAYER.set_target_value_stores()
-PLAYER.plot_2d_target_value_stores(view_init=(30, 30))
+    if PLAYER_converged and DEALER_converged:
+        break
 
-DEALER.set_target_value_stores()
-DEALER.plot_2d_target_value_stores(view_init=(30, 30))
+PLAYER.plot_2d_target_value_stores(view_init=(30, -20))
+DEALER.plot_2d_target_value_stores(view_init=(30, 70))
 
 PLAYER.action_value_store.metrics.plot_history("diff")
 DEALER.action_value_store.metrics.plot_history("diff")

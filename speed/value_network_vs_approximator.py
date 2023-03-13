@@ -24,9 +24,6 @@
 #   to track and back-progagte
 # - for micrograd, a smaller network structure isn't necessary faster
 #
-# TODO:
-# - enable the batch processing for micrograd and then compare
-#
 # RUN:
 # %%
 import sys
@@ -37,16 +34,16 @@ from time import time
 from tqdm import trange
 from random import shuffle
 
-from src.module.model_free_agent import ModelFreeAgent
+from src.agent.model_free_agent import ModelFreeAgent
 
-from src.easy_21.game import playout, PLAYER_INFO
-from src.easy_21.feature_function import numeric_feature
+from game.easy_21.game import playout, PLAYER_INFO
+from game.easy_21.feature_function import numeric_feature
 
 #
 # hyperparameters and agent config
 #
 
-EPISODES = int(1e4)
+EPISODES = int(1e3)
 EPOCH = 10
 
 PLAYER = ModelFreeAgent("player", PLAYER_INFO)
@@ -65,11 +62,13 @@ configs = [
     ("approximator", numeric_feature),
     ("network", numeric_feature, [1]),
     ("network", numeric_feature, [4, 2, 1]),
+    ("network_gpu", numeric_feature, [4, 2, 1]),
 ]
 labels = [
     "native_linear",
     "micrograd_linear",
     "micrograd_network",
+    "tinygrad_network",
 ]
 
 for config in configs:
