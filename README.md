@@ -2,6 +2,8 @@
 
 coursework for [Reinforcement Learning by David Silver](https://www.deepmind.com/learning-resources/introduction-to-reinforcement-learning-with-david-silver)
 
+[study notes](https://www.notion.so/zhenyulin/RL-by-David-Silver-654774454b6f4ceca6e5d9fba58949c9?pvs=4)
+
 ## Topics
 
 * Monte-Carlo Contarol
